@@ -28,6 +28,15 @@ void on_post_fs_data(void)
 
     ksu_load_allow_list();
     ksu_observer_init();
+    // The normal (non late-load) init path never searches for the Manager:
+    // core/init.c only calls track_throne() inside the ksu_late_loaded branch,
+    // and on_boot_completed() used to pass prune_only=true. The fsnotify
+    // observer reacts to packages.list changes only, so a Manager installed
+    // before the module was flashed never got crowned after a reboot and was
+    // stuck showing "not installed" despite a perfectly matching certificate.
+    // track_throne() is cheap once a manager exists (it returns early), so
+    // scanning every /data/app/*/base.apk once here is acceptable.
+    track_throne(false);
     // Sanity check for safe mode only needs early-boot input samples.
     ksu_stop_input_hook_runtime();
     ksu_selinux_hide_handle_post_fs_data();
@@ -66,6 +75,9 @@ void on_boot_completed(void)
 {
     ksu_boot_completed = true;
     pr_info("on_boot_completed!\n");
-    track_throne(true);
+    // Also crown the Manager here: /data/app may still have been settling
+    // during post-fs-data. Passing false keeps pruning the allowlist too,
+    // which is all the old prune_only=true call used to do.
+    track_throne(false);
     ksu_selinux_hide_drop_backup_if_unused();
 }

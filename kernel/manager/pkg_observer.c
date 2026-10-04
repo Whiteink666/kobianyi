@@ -9,7 +9,10 @@
 #include "klog.h" // IWYU pragma: keep
 #include "manager/throne_tracker.h"
 
-#define MASK_SYSTEM (FS_CREATE | FS_MOVE | FS_EVENT_ON_CHILD)
+// FS_MODIFY is needed as well: depending on the Android version the package
+// manager rewrites packages.list in place instead of replacing it atomically,
+// which only emits a modify event and would never crown the Manager.
+#define MASK_SYSTEM (FS_CREATE | FS_MOVE | FS_MODIFY | FS_EVENT_ON_CHILD)
 
 struct watch_dir {
     const char *path;
