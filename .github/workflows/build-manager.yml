@@ -98,9 +98,18 @@ jobs:
       # trust exactly that certificate, otherwise the Manager is never
       # recognized and the app keeps reporting "not installed".
       - name: Extract release certificate hash and size
-        if: ${{ ((github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag') && secrets.KEYSTORE != '' }}
+        # NOTE: the `secrets` context cannot be used in an `if:` condition
+        # (GitHub rejects it with "Unrecognized named-value: 'secrets'", which
+        # invalidates the whole workflow file), so the presence of a release
+        # keystore is checked inside the script instead.
+        if: ${{ (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
         id: extract_release
         run: |
+          if [ -z "${{ secrets.KEYSTORE }}" ]; then
+            echo "No release keystore configured, keeping the built-in signature."
+            exit 0
+          fi
+
           echo "${{ secrets.KEYSTORE }}" | base64 -d > release-key.jks
 
           keytool -exportcert \
