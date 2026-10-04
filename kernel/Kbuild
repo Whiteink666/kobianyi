@@ -130,11 +130,12 @@ ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 ccflags-y += -DKSU_VERSION_FULL=\"$(KSU_VERSION_FULL)\"
 
 ifndef KSU_EXPECTED_SIZE
-KSU_EXPECTED_SIZE := 0x35c
+# Default trust anchor: our own release certificate (manager/key.jks, alias "furryroot").
+KSU_EXPECTED_SIZE := 0x0366
 endif
 
 ifndef KSU_EXPECTED_HASH
-KSU_EXPECTED_HASH := 947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef
+KSU_EXPECTED_HASH := 0880c649fbb0267598fadd7bd66694754bcb316142d98e0b1c89c554c3f0c6f4
 endif
 
 ifdef KSU_MANAGER_PACKAGE
