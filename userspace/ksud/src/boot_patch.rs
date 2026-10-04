@@ -251,7 +251,7 @@ mod android {
     /// candidates as `partition_exists`. Keeping both in sync matters: listing a
     /// partition and then reading it from a hardcoded /dev/block/by-name path
     /// would fail on vendors that only expose platform/bootdevice by-name links.
-    fn partition_path(name: &str, slot_suffix: &str) -> PathBuf {
+    pub(super) fn partition_path(name: &str, slot_suffix: &str) -> PathBuf {
         let dirs = by_name_dirs();
         dirs.iter()
             .map(|dir| dir.join(format!("{name}{slot_suffix}")))
@@ -653,7 +653,7 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
                 if ota {
                     let slot_suffix = get_slot_suffix(true);
                     println!("- Trying to auto detect KMI version from boot");
-                    return parse_kmi_from_boot(&partition_path("boot", &slot_suffix));
+                    return parse_kmi_from_boot(&android::partition_path("boot", &slot_suffix));
                 }
                 #[cfg(target_os = "android")]
                 match get_current_kmi() {
