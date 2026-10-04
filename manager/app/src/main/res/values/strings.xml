@@ -267,6 +267,9 @@
     <string name="select_file_tip_nogki">Please select the GKI device image file you want to patch!</string>
     <string name="current_kmi">KMI version of this device: %s</string>
     <string name="current_device_kmi">This device KMI</string>
+    <string name="select_kmi_auto">Auto detect</string>
+    <string name="select_kmi_auto_summary">Let ksud detect the KMI from the image or the running kernel</string>
+    <string name="select_kmi_no_lkm">No LKM is bundled for any KMI. Upload a matching .ko file, or use auto detect.</string>
     <string name="settings_enable_blur">Blur</string>
     <string name="settings_enable_blur_summary">Enable blur effect for top and bottom bars.</string>
     <string name="settings_floating_bottom_bar">Floating bottom bar</string>
@@ -458,6 +461,47 @@
     <string name="spoof_cpu_apply_failed">Failed to apply CPU spoofing</string>
     <string name="spoof_cpu_apply_partial_failure">Partial success: %1$d succeeded, %2$d failed</string>
     <string name="spoof_cpu_warning">Will affect CPU identification for all subsequent processes. Proceed with caution.</string>
+    <!-- Temporary Uninstall -->
+    <string name="settings_uninstall_temporary_started">Temporarily uninstalling KernelSU…</string>
+    <string name="settings_uninstall_temporary_success">KernelSU temporarily uninstalled. It will be restored after the next reboot</string>
+    <string name="settings_uninstall_temporary_failed">Temporary uninstall failed (LKM mode only)</string>
+    <!-- Process Mark -->
+    <string name="tools_mark_title">Process mark</string>
+    <string name="tools_mark_summary">Query or toggle kernel process marks</string>
+    <string name="tools_mark_pid_label">PID</string>
+    <string name="tools_mark_query">Query</string>
+    <string name="tools_mark_mark">Mark</string>
+    <string name="tools_mark_unmark">Unmark</string>
+    <string name="tools_mark_all">Mark all</string>
+    <string name="tools_mark_refresh">Refresh marks</string>
+    <string name="tools_mark_done">Done</string>
+    <string name="tools_mark_result_empty">(no output)</string>
+    <!-- Extract Binaries -->
+    <string name="tools_extract_busybox">Extract busybox</string>
+    <string name="tools_extract_bootctl">Extract bootctl</string>
+    <string name="tools_extract_summary">Extract the embedded binary to /data/local/tmp</string>
+    <string name="tools_extract_binary_success">Extracted %1$s to %2$s</string>
+    <string name="tools_extract_binary_failed">Failed to extract %1$s</string>
+    <!-- Boot Slot -->
+    <string name="tools_slot_switch_title">Switch boot slot</string>
+    <string name="tools_slot_switch_summary">Current slot: %1$s. Tap to switch the active slot</string>
+    <string name="tools_slot_switch_success">Active boot slot switched</string>
+    <string name="tools_slot_switch_failed">Failed to switch boot slot</string>
+    <!-- Module Config -->
+    <string name="module_config_title">Module config</string>
+    <string name="module_config_empty">No config entries</string>
+    <string name="module_config_add">Add config entry</string>
+    <string name="module_config_edit">Edit config entry</string>
+    <string name="module_config_key">Key</string>
+    <string name="module_config_value">Value</string>
+    <string name="module_config_delete">Delete</string>
+    <string name="module_config_clear">Clear all entries</string>
+    <string name="module_config_saved">Saved</string>
+    <string name="module_config_deleted">Deleted</string>
+    <string name="module_config_cleared">Cleared</string>
+    <string name="module_config_invalid_key">Invalid key: it must start with a letter</string>
+    <string name="module_config_confirm_delete">Delete this config entry?</string>
+    <string name="module_config_confirm_clear">Clear all config entries of this module?</string>
     <!-- Zip File Type Labels -->
     <string name="zip_type_module"> (Module)</string>
     <string name="zip_type_kernel"> (Kernel)</string>

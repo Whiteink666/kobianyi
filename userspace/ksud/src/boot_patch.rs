@@ -218,6 +218,52 @@ mod android {
         Ok(())
     }
 
+    /// Directories that may hold the `by-name` partition links.
+    ///
+    /// `/dev/block/by-name` is the standard location, but plenty of vendors only
+    /// expose `/dev/block/platform/<device>/by-name` or `/dev/block/bootdevice/by-name`.
+    /// Probing only the standard one makes every partition disappear on those devices.
+    fn by_name_dirs() -> Vec<PathBuf> {
+        let mut dirs = vec![PathBuf::from("/dev/block/by-name")];
+        for parent in ["/dev/block/platform", "/dev/block/bootdevice"] {
+            let Ok(entries) = std::fs::read_dir(parent) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let by_name = entry.path().join("by-name");
+                if by_name.is_dir() {
+                    dirs.push(by_name);
+                }
+            }
+        }
+        dirs
+    }
+
+    /// Whether a partition exists, tolerating both A/B suffixed (`boot_a`) and
+    /// plain (`boot`) naming, and any of the by-name locations.
+    fn partition_exists(name: &str, slot_suffix: &str) -> bool {
+        by_name_dirs()
+            .iter()
+            .any(|dir| dir.join(format!("{name}{slot_suffix}")).exists() || dir.join(name).exists())
+    }
+
+    /// Resolve the real device node of a partition, using exactly the same
+    /// candidates as `partition_exists`. Keeping both in sync matters: listing a
+    /// partition and then reading it from a hardcoded /dev/block/by-name path
+    /// would fail on vendors that only expose platform/bootdevice by-name links.
+    fn partition_path(name: &str, slot_suffix: &str) -> PathBuf {
+        let dirs = by_name_dirs();
+        dirs.iter()
+            .map(|dir| dir.join(format!("{name}{slot_suffix}")))
+            .find(|path| path.exists())
+            .or_else(|| {
+                dirs.iter()
+                    .map(|dir| dir.join(name))
+                    .find(|path| path.exists())
+            })
+            .unwrap_or_else(|| PathBuf::from(format!("/dev/block/by-name/{name}{slot_suffix}")))
+    }
+
     pub fn choose_boot_partition(
         kmi: &str,
         is_replace_kernel: bool,
@@ -225,8 +271,7 @@ mod android {
     ) -> String {
         let slot_suffix = get_slot_suffix(false);
         let skip_init_boot = kmi.starts_with("android12-");
-        let init_boot_exist =
-            Path::new(&format!("/dev/block/by-name/init_boot{slot_suffix}")).exists();
+        let init_boot_exist = partition_exists("init_boot", &slot_suffix);
 
         // if specific partition is specified, use it
         if let Some(part) = partition {
@@ -245,7 +290,16 @@ mod android {
     }
 
     pub fn get_slot_suffix(ota: bool) -> String {
-        let mut slot_suffix = utils::getprop("ro.boot.slot_suffix").unwrap_or_default();
+        // Some devices only publish the slot in ro.boot.slot (and without the
+        // leading underscore), leaving ro.boot.slot_suffix empty.
+        let raw = utils::getprop("ro.boot.slot_suffix")
+            .or_else(|| utils::getprop("ro.boot.slot"))
+            .unwrap_or_default();
+        let mut slot_suffix = match raw.as_str() {
+            s if s.starts_with('_') => s.to_string(),
+            "a" | "b" => format!("_{raw}"),
+            _ => String::new(),
+        };
         if !slot_suffix.is_empty() && ota {
             if slot_suffix == "_a" {
                 slot_suffix = "_b".to_string();
@@ -259,11 +313,20 @@ mod android {
     pub fn list_available_partitions() -> Vec<String> {
         let slot_suffix = get_slot_suffix(false);
         let candidates = vec!["boot", "init_boot", "vendor_boot"];
-        candidates
+        let mut partitions: Vec<String> = candidates
             .into_iter()
-            .filter(|name| Path::new(&format!("/dev/block/by-name/{name}{slot_suffix}")).exists())
+            .filter(|name| partition_exists(name, &slot_suffix))
             .map(ToString::to_string)
-            .collect()
+            .collect();
+
+        // Nothing detected (unusual by-name layout, or ksud probing from a
+        // non root context): keep at least "boot", which is exactly what
+        // choose_boot_partition() picks when init_boot is absent.
+        if partitions.is_empty() {
+            log::warn!("no boot partition detected, falling back to boot");
+            partitions.push("boot".to_string());
+        }
+        partitions
     }
 
     pub(super) fn auto_boot_partition_path(
@@ -274,7 +337,7 @@ mod android {
     ) -> PathBuf {
         let slot_suffix = get_slot_suffix(ota);
         let name = choose_boot_partition(kmi, is_replace_kernel, partition);
-        PathBuf::from(format!("/dev/block/by-name/{name}{slot_suffix}"))
+        partition_path(&name, &slot_suffix)
     }
 
     pub(super) fn post_ota() -> Result<()> {
@@ -334,13 +397,10 @@ pub fn parse_kmi(buffer: &[u8]) -> Result<String> {
         .windows(4)
         .enumerate()
         .filter(|(_, x)| {
-            x[1] == b'.'
-                && x[2].is_ascii_digit()
-                && match x[0] {
-                    b'5' => x[3].is_ascii_digit(),
-                    b'6'..=b'9' => true,
-                    _ => false,
-                }
+            // '<major>.<minor>' where major is 5 (or newer). The 4th byte used to
+            // be required to be a digit, which silently skipped every 5.4 kernel
+            // because its 4th byte is the '.' of "5.4.".
+            x[1] == b'.' && x[2].is_ascii_digit() && matches!(x[0], b'5'..=b'9')
         })
         .find_map(|(i, _)| {
             let a = &buffer[i..buffer.len().min(i + 100)];
@@ -593,9 +653,7 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
                 if ota {
                     let slot_suffix = get_slot_suffix(true);
                     println!("- Trying to auto detect KMI version from boot");
-                    return parse_kmi_from_boot(Path::new(&format!(
-                        "/dev/block/by-name/boot{slot_suffix}"
-                    )));
+                    return parse_kmi_from_boot(&partition_path("boot", &slot_suffix));
                 }
                 #[cfg(target_os = "android")]
                 match get_current_kmi() {

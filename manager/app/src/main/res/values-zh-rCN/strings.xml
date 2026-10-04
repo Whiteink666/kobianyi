@@ -246,6 +246,9 @@
     <string name="select_file_tip_nogki">请选择要修补的 GKI 设备镜像文件</string>
     <string name="current_kmi">本设备 KMI 版本：%s</string>
     <string name="current_device_kmi">当前设备的 KMI</string>
+    <string name="select_kmi_auto">自动检测</string>
+    <string name="select_kmi_auto_summary">由 ksud 从镜像或当前内核中解析 KMI</string>
+    <string name="select_kmi_no_lkm">未内置任何 KMI 对应的 LKM，请上传匹配的 .ko 文件，或使用自动检测。</string>
     <string name="module_action_success">模块 action 执行成功。</string>
     <string name="settings_enable_blur">模糊</string>
     <string name="settings_enable_blur_summary">启用顶栏和底栏的模糊效果</string>
@@ -444,6 +447,47 @@
     <string name="spoof_cpu_apply_failed">CPU 伪装应用失败</string>
     <string name="spoof_cpu_apply_partial_failure">部分成功：%1$d 成功，%2$d 失败</string>
     <string name="spoof_cpu_warning">将影响所有后续进程的 CPU 识别。请谨慎操作。</string>
+    <!-- Temporary Uninstall -->
+    <string name="settings_uninstall_temporary_started">正在临时卸载 KernelSU…</string>
+    <string name="settings_uninstall_temporary_success">KernelSU 已临时卸载，下次重启后恢复</string>
+    <string name="settings_uninstall_temporary_failed">临时卸载失败（仅支持 LKM 模式）</string>
+    <!-- Process Mark -->
+    <string name="tools_mark_title">进程标记</string>
+    <string name="tools_mark_summary">查询或设置内核进程标记</string>
+    <string name="tools_mark_pid_label">PID</string>
+    <string name="tools_mark_query">查询</string>
+    <string name="tools_mark_mark">标记</string>
+    <string name="tools_mark_unmark">取消标记</string>
+    <string name="tools_mark_all">标记全部</string>
+    <string name="tools_mark_refresh">刷新标记</string>
+    <string name="tools_mark_done">操作完成</string>
+    <string name="tools_mark_result_empty">（无输出）</string>
+    <!-- Extract Binaries -->
+    <string name="tools_extract_busybox">提取 busybox</string>
+    <string name="tools_extract_bootctl">提取 bootctl</string>
+    <string name="tools_extract_summary">提取内嵌二进制到 /data/local/tmp</string>
+    <string name="tools_extract_binary_success">已提取 %1$s 到 %2$s</string>
+    <string name="tools_extract_binary_failed">提取 %1$s 失败</string>
+    <!-- Boot Slot -->
+    <string name="tools_slot_switch_title">切换启动槽位</string>
+    <string name="tools_slot_switch_summary">当前槽位：%1$s，点击切换活动槽位</string>
+    <string name="tools_slot_switch_success">已切换活动启动槽位</string>
+    <string name="tools_slot_switch_failed">切换启动槽位失败</string>
+    <!-- Module Config -->
+    <string name="module_config_title">模块配置</string>
+    <string name="module_config_empty">暂无配置项</string>
+    <string name="module_config_add">添加配置项</string>
+    <string name="module_config_edit">编辑配置项</string>
+    <string name="module_config_key">键</string>
+    <string name="module_config_value">值</string>
+    <string name="module_config_delete">删除</string>
+    <string name="module_config_clear">清空全部配置</string>
+    <string name="module_config_saved">已保存</string>
+    <string name="module_config_deleted">已删除</string>
+    <string name="module_config_cleared">已清空</string>
+    <string name="module_config_invalid_key">无效的键：必须以字母开头</string>
+    <string name="module_config_confirm_delete">删除该配置项？</string>
+    <string name="module_config_confirm_clear">清空该模块的全部配置？</string>
     <!-- Zip File Type Labels -->
     <string name="zip_type_module"> (模块)</string>
     <string name="zip_type_kernel"> (内核)</string>

@@ -69,6 +69,9 @@ fun InstallScreen(
     var partitionSelectionIndex by rememberSaveable { mutableIntStateOf(0) }
     var hasCustomSelected by rememberSaveable { mutableStateOf(false) }
     val showChooseKmiDialog = rememberSaveable { mutableStateOf(false) }
+    // set when the user picks "auto detect" in the KMI dialog: ksud resolves the
+    // KMI on its own, so the dialog must not be shown again for this attempt
+    var autoDetectKmi by rememberSaveable { mutableStateOf(false) }
     var advancedOptionsShown by rememberSaveable { mutableStateOf(false) }
     var allowShell by rememberSaveable { mutableStateOf(false) }
     var enableAdb by rememberSaveable { mutableStateOf(false) }
@@ -236,8 +239,12 @@ fun InstallScreen(
         show = showChooseKmiDialog.value,
         onDismissRequest = { showChooseKmiDialog.value = false },
         onSelected = { kmi ->
-            kmi?.let {
-                lkmSelection = LkmSelection.KmiString(it)
+            if (kmi == null) {
+                // let ksud detect the KMI from the image / running kernel
+                autoDetectKmi = true
+                onInstall()
+            } else {
+                lkmSelection = LkmSelection.KmiString(kmi)
                 onInstall()
             }
         }
@@ -341,6 +348,8 @@ fun InstallScreen(
     val actions = InstallScreenActions(
         onBack = dropUnlessResumed { navigator.pop() },
         onSelectMethod = { method ->
+            // a previous "auto detect" choice must not leak into another method
+            autoDetectKmi = false
             if (method is InstallMethod.HorizonKernel && method.uri != null) {
                 anyKernel3State.onHorizonKernelSelected(method)
             } else {
@@ -380,7 +389,7 @@ fun InstallScreen(
                 is InstallMethod.SelectFile -> true
                 else -> isKmiUnknown
             }
-            if (isGkiDevice && !isLkmSelected && isKmiUnresolved && installMethod !is InstallMethod.HorizonKernel) {
+            if (isGkiDevice && !isLkmSelected && !autoDetectKmi && isKmiUnresolved && installMethod !is InstallMethod.HorizonKernel) {
                 showChooseKmiDialog.value = true
             } else {
                 onInstall()

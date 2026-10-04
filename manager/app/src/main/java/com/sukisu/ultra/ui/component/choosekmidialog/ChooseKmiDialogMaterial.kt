@@ -29,7 +29,7 @@ fun ChooseKmiDialogMaterial(
 ) {
     if (!show) return
 
-    val supportedKMIs by produceState(initialValue = emptyList()) {
+    val supportedKMIs by produceState(initialValue = emptyList<String>()) {
         value = getSupportedKmis()
     }
 
@@ -37,20 +37,27 @@ fun ChooseKmiDialogMaterial(
         value = getCurrentKmi()
     }
 
-    val selectedKmi = remember(currentKmi) { mutableStateOf(currentKmi) }
+    val detected = currentKmi.isNotBlank()
+    val initialSelection = if (currentKmi in supportedKMIs) currentKmi else KMI_AUTO_DETECT
+    val selectedKmi = remember(currentKmi, supportedKMIs) {
+        mutableStateOf(initialSelection)
+    }
 
     AlertDialog(
         onDismissRequest = {
             onDismissRequest()
-            selectedKmi.value = currentKmi
+            selectedKmi.value = initialSelection
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSelected(selectedKmi.value)
+                    val selection = selectedKmi.value
+                    onSelected(if (selection == KMI_AUTO_DETECT) null else selection)
                     onDismissRequest()
                 },
-                enabled = supportedKMIs.contains(selectedKmi.value)
+                enabled = selectedKmi.value == KMI_AUTO_DETECT ||
+                    supportedKMIs.contains(selectedKmi.value) ||
+                    (detected && selectedKmi.value == currentKmi)
             ) {
                 Text(stringResource(id = R.string.confirm))
             }
@@ -58,7 +65,7 @@ fun ChooseKmiDialogMaterial(
         dismissButton = {
             TextButton(onClick = {
                 onDismissRequest()
-                selectedKmi.value = currentKmi
+                selectedKmi.value = initialSelection
             }) {
                 Text(stringResource(id = android.R.string.cancel))
             }
@@ -74,14 +81,32 @@ fun ChooseKmiDialogMaterial(
         },
         text = {
             SegmentedColumn(
-                content = supportedKMIs.map { kmi ->
-                    {
+                content = buildList {
+                    add {
                         SegmentedRadioItem(
-                            title = kmi,
-                            summary = if (kmi == currentKmi) stringResource(R.string.current_device_kmi) else null,
-                            selected = selectedKmi.value == kmi,
-                            onClick = { selectedKmi.value = kmi }
+                            title = stringResource(R.string.select_kmi_auto),
+                            summary = stringResource(R.string.select_kmi_auto_summary),
+                            selected = selectedKmi.value == KMI_AUTO_DETECT,
+                            onClick = { selectedKmi.value = KMI_AUTO_DETECT }
                         )
+                    }
+                    if (supportedKMIs.isEmpty()) {
+                        add {
+                            Text(
+                                text = stringResource(R.string.select_kmi_no_lkm),
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                    supportedKMIs.map { kmi ->
+                        add {
+                            SegmentedRadioItem(
+                                title = kmi,
+                                summary = if (kmi == currentKmi) stringResource(R.string.current_device_kmi) else null,
+                                selected = selectedKmi.value == kmi,
+                                onClick = { selectedKmi.value = kmi }
+                            )
+                        }
                     }
                 }
             )

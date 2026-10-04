@@ -105,4 +105,8 @@ sealed interface Route : NavKey, Parcelable {
     @Parcelize
     @Serializable
     data object UmountManager: Route
+
+    @Parcelize
+    @Serializable
+    data class ModuleConfig(val moduleId: String) : Route
 }

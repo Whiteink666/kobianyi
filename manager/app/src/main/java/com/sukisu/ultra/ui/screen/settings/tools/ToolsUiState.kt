@@ -9,6 +9,9 @@ data class ToolsUiState(
     val spoofCpuDialogVisible: Boolean = false,
     val currentCpuInfo: CpuInfo? = null,
     val spoofCpuLoading: Boolean = false,
+    val markDialogVisible: Boolean = false,
+    val currentSlotSuffix: String = "",
+    val slotBusy: Boolean = false,
 )
 
 @Immutable
@@ -21,6 +24,10 @@ data class ToolsActions(
     val onOpenSpoofCpuDialog: () -> Unit = {},
     val onDismissSpoofCpuDialog: () -> Unit = {},
     val onApplySpoofCpu: (SpoofCpuParams) -> Unit = {},
+    val onOpenMarkDialog: () -> Unit = {},
+    val onDismissMarkDialog: () -> Unit = {},
+    val onExtractBinary: (String) -> Unit = {},
+    val onSwitchSlot: () -> Unit = {},
 )
 
 @Immutable

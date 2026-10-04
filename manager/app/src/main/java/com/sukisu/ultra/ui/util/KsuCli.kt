@@ -535,7 +535,9 @@ fun rootAvailable(): Boolean {
 suspend fun getCurrentKmi(): String = withContext(Dispatchers.IO) {
     val shell = getRootShell()
     val cmd = "boot-info current-kmi"
-    ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} $cmd")
+    // fastCmd keeps the trailing newline, which would never match the KMI
+    // strings reported by supported-kmis
+    ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} $cmd").trim()
 }
 
 suspend fun getSupportedKmis(): List<String> = withContext(Dispatchers.IO) {
@@ -551,14 +553,47 @@ suspend fun isAbDevice(): Boolean = withContext(Dispatchers.IO) {
     ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} $cmd").trim().toBoolean()
 }
 
+private val BOOT_PARTITION_CANDIDATES = listOf("boot", "init_boot", "vendor_boot")
+private val BOOT_SLOT_SUFFIX_REGEX = Regex("_[ab]$")
+
+/**
+ * Probe the boot related partitions that really exist on the device.
+ *
+ * `ksud boot-info available-partitions` needs a root shell, which a fresh install
+ * does not have, so fall back to reading /dev/block directly: it is world readable
+ * and covers the vendor specific by-name locations.
+ */
+private fun probeBootPartitions(shell: Shell): List<String> {
+    val command =
+        "for d in /dev/block/by-name /dev/block/bootdevice/by-name /dev/block/platform/*/by-name; " +
+            "do [ -d \"\$d\" ] && ls \"\$d\"; done"
+    val out = runCatching {
+        shell.newJob().add(command).to(ArrayList<String>(), null).exec().out
+    }.getOrDefault(emptyList())
+
+    val found = out.asSequence()
+        .flatMap { it.split(Regex("\\s+")).asSequence() }
+        .map { BOOT_SLOT_SUFFIX_REGEX.replace(it.trim(), "") }
+        .filter { it in BOOT_PARTITION_CANDIDATES }
+        .distinct()
+        .toList()
+
+    // keep "boot" as the last resort, it is what ksud picks when init_boot is absent
+    return found.ifEmpty { listOf("boot") }
+}
+
 suspend fun getDefaultPartition(): String = withContext(Dispatchers.IO) {
     val shell = getRootShell()
     if (shell.isRoot) {
         val cmd = "boot-info default-partition"
-        ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} $cmd").trim()
-    } else {
-        if (!Os.uname().release.contains("android12-")) "init_boot" else "boot"
+        val partition = ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} $cmd").trim()
+        if (partition.isNotBlank()) return@withContext partition
     }
+    // No root yet (or ksud unavailable): decide from the partitions that actually
+    // exist instead of hardcoding init_boot, which broke devices without one.
+    val partitions = probeBootPartitions(shell)
+    val legacyGki = Os.uname().release.contains("android12-")
+    if (!legacyGki && "init_boot" in partitions) "init_boot" else "boot"
 }
 
 suspend fun getSlotSuffix(ota: Boolean): String = withContext(Dispatchers.IO) {
@@ -574,8 +609,11 @@ suspend fun getSlotSuffix(ota: Boolean): String = withContext(Dispatchers.IO) {
 suspend fun getAvailablePartitions(): List<String> = withContext(Dispatchers.IO) {
     val shell = getRootShell()
     val cmd = "boot-info available-partitions"
-    val out = shell.newJob().add("${getKsuDaemonPath()} $cmd").to(ArrayList(), null).exec().out
-    out.filter { it.isNotBlank() }.map { it.trim() }
+    val out = shell.newJob().add("${getKsuDaemonPath()} $cmd").to(ArrayList<String>(), null).exec().out
+    val partitions = out.filter { it.isNotBlank() }.map { it.trim() }.distinct()
+    // ksud failed or is unreachable (no root): never leave the user with an empty
+    // list, otherwise the partition selector disappears entirely.
+    partitions.ifEmpty { probeBootPartitions(shell) }
 }
 
 fun hasMagisk(): Boolean {
@@ -900,4 +938,138 @@ private fun parseQuotedValue(value: String): String {
     } else {
         trimmed
     }
+}
+
+// 临时卸载 KernelSU（LKM 模式：停止服务并卸载内核模块，下次重启后恢复）
+fun uninstallTemporary(
+    onStdout: (String) -> Unit = {},
+    onStderr: (String) -> Unit = {}
+): Boolean {
+    val result = flashWithIO("${getKsuDaemonPath()} unload", onStdout, onStderr)
+    Log.i(TAG, "temporary uninstall (unload) result: ${result.code}")
+    return result.code == 0
+}
+
+// 进程打标（ksud debug mark）
+fun getProcessMarkStatus(pid: Int): String {
+    val shell = getRootShell()
+    val result = shell.newJob()
+        .add("${getKsuDaemonPath()} debug mark get $pid")
+        .to(ArrayList<String>(), null).exec()
+    return result.out.joinToString("\n").trim()
+}
+
+fun markProcess(pid: Int): Boolean {
+    val result = execKsud("debug mark mark $pid", true)
+    Log.i(TAG, "mark process $pid result: $result")
+    return result
+}
+
+fun unmarkProcess(pid: Int): Boolean {
+    val result = execKsud("debug mark unmark $pid", true)
+    Log.i(TAG, "unmark process $pid result: $result")
+    return result
+}
+
+fun refreshProcessMarks(): Boolean {
+    val result = execKsud("debug mark refresh", true)
+    Log.i(TAG, "refresh process marks result: $result")
+    return result
+}
+
+// 工具箱：提取 ksud 内嵌二进制（busybox / bootctl）
+fun extractKsudBinary(name: String, destPath: String): Boolean {
+    val shell = getRootShell()
+    val result = shell.newJob()
+        .add("${getKsuDaemonPath()} debug extract-binary $name '$destPath'")
+        .to(ArrayList<String>(), null).exec()
+    Log.i(TAG, "extract binary $name to $destPath result: ${result.isSuccess}")
+    return result.isSuccess
+}
+
+// A/B 槽位。解析必须走 ksud：部分机型只提供 ro.boot.slot，直接读
+// ro.boot.slot_suffix 会得到空串，进而把当前槽误判成另一个槽。
+suspend fun getBootSlotSuffix(): String = getSlotSuffix(false)
+
+suspend fun switchBootSlot(): Boolean = withContext(Dispatchers.IO) {
+    val shell = getRootShell(true)
+    val bootctlPath = "/data/local/tmp/ksu_bootctl"
+    val extract = shell.newJob()
+        .add("${getKsuDaemonPath()} debug extract-binary bootctl $bootctlPath")
+        .to(ArrayList<String>(), null).exec()
+    if (!extract.isSuccess) {
+        Log.e(TAG, "failed to extract bootctl")
+        return@withContext false
+    }
+    val currentSlot = getSlotSuffix(false)
+    if (currentSlot.isBlank()) {
+        // cannot tell which slot is active: switching blindly may re-activate
+        // the slot we are already running from
+        Log.e(TAG, "cannot determine current boot slot, refusing to switch")
+        return@withContext false
+    }
+    val targetSlot = if (currentSlot.endsWith("b")) 0 else 1
+    val result = shell.newJob()
+        .add("$bootctlPath set-active-boot-slot $targetSlot")
+        .to(ArrayList<String>(), null).exec()
+    Log.i(TAG, "switch boot slot from '$currentSlot' to $targetSlot result: ${result.isSuccess}")
+    result.isSuccess
+}
+
+// 模块配置（ksud module config，通过 KSU_MODULE 环境变量指定模块命名空间）
+private fun shellQuote(value: String): String = "'${value.replace("'", "'\\''")}'"
+
+private fun moduleConfigCmd(moduleId: String, sub: String): String {
+    return "KSU_MODULE=${shellQuote(moduleId)} ${getKsuDaemonPath()} module config $sub"
+}
+
+fun listModuleConfig(moduleId: String): Map<String, String> {
+    val shell = getRootShell()
+    val result = shell.newJob()
+        .add(moduleConfigCmd(moduleId, "list"))
+        .to(ArrayList<String>(), null).exec()
+    val map = linkedMapOf<String, String>()
+    for (line in result.out) {
+        val idx = line.indexOf('=')
+        if (idx > 0) {
+            map[line.substring(0, idx).trim()] = line.substring(idx + 1)
+        }
+    }
+    return map
+}
+
+fun getModuleConfigValue(moduleId: String, key: String): String? {
+    val shell = getRootShell()
+    val result = shell.newJob()
+        .add(moduleConfigCmd(moduleId, "get ${shellQuote(key)}"))
+        .to(ArrayList<String>(), null).exec()
+    if (!result.isSuccess) return null
+    return result.out.joinToString("\n").trim()
+}
+
+fun setModuleConfigValue(moduleId: String, key: String, value: String): Boolean {
+    val shell = getRootShell()
+    val result = shell.newJob()
+        .add(moduleConfigCmd(moduleId, "set ${shellQuote(key)} ${shellQuote(value)}"))
+        .to(ArrayList<String>(), null).exec()
+    Log.i(TAG, "set module config $moduleId/$key result: ${result.isSuccess}")
+    return result.isSuccess
+}
+
+fun deleteModuleConfigKey(moduleId: String, key: String): Boolean {
+    val shell = getRootShell()
+    val result = shell.newJob()
+        .add(moduleConfigCmd(moduleId, "delete ${shellQuote(key)}"))
+        .to(ArrayList<String>(), null).exec()
+    Log.i(TAG, "delete module config $moduleId/$key result: ${result.isSuccess}")
+    return result.isSuccess
+}
+
+fun clearModuleConfig(moduleId: String): Boolean {
+    val shell = getRootShell()
+    val result = shell.newJob()
+        .add(moduleConfigCmd(moduleId, "clear"))
+        .to(ArrayList<String>(), null).exec()
+    Log.i(TAG, "clear module config $moduleId result: ${result.isSuccess}")
+    return result.isSuccess
 }

@@ -17,7 +17,10 @@ import com.sukisu.ultra.ui.LocalUiMode
 import com.sukisu.ultra.ui.UiMode
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.navigation3.Route
+import com.sukisu.ultra.ui.util.extractKsudBinary
+import com.sukisu.ultra.ui.util.getBootSlotSuffix
 import com.sukisu.ultra.ui.util.spoofCpu
+import com.sukisu.ultra.ui.util.switchBootSlot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +37,9 @@ fun ToolsScreen() {
     var spoofCpuDialogVisible by remember { mutableStateOf(false) }
     var currentCpuInfo by remember { mutableStateOf<CpuInfo?>(null) }
     var spoofCpuLoading by remember { mutableStateOf(false) }
+    var markDialogVisible by remember { mutableStateOf(false) }
+    var currentSlotSuffix by remember { mutableStateOf("") }
+    var slotBusy by remember { mutableStateOf(false) }
 
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -73,6 +79,8 @@ fun ToolsScreen() {
         selinuxLoading = false
         
         currentCpuInfo = withContext(Dispatchers.IO) { readCurrentCpuIdentity() }
+
+        currentSlotSuffix = getBootSlotSuffix()
     }
 
     val actions = ToolsActions(
@@ -120,7 +128,7 @@ fun ToolsScreen() {
             scope.launch(Dispatchers.IO) {
                 var successCount = 0
                 var failCount = 0
-                
+
                 for (cpuIndex in params.cpuIndices) {
                     val success = spoofCpu(
                         cpu = cpuIndex,
@@ -131,18 +139,55 @@ fun ToolsScreen() {
                     )
                     if (success) successCount++ else failCount++
                 }
-                
+
                 withContext(Dispatchers.Main) {
                     spoofCpuLoading = false
                     spoofCpuDialogVisible = false
-                    
+
                     val message = when {
                         failCount == 0 -> context.getString(R.string.spoof_cpu_apply_success)
                         successCount == 0 -> context.getString(R.string.spoof_cpu_apply_failed)
                         else -> context.getString(R.string.spoof_cpu_apply_partial_failure, successCount, failCount)
                     }
-                    
+
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        },
+        onOpenMarkDialog = {
+            markDialogVisible = true
+        },
+        onDismissMarkDialog = {
+            markDialogVisible = false
+        },
+        onExtractBinary = { name ->
+            scope.launch(Dispatchers.IO) {
+                val destPath = "/data/local/tmp/$name"
+                val success = extractKsudBinary(name, destPath)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        if (success) context.getString(R.string.tools_extract_binary_success, name, destPath)
+                        else context.getString(R.string.tools_extract_binary_failed, name),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        },
+        onSwitchSlot = {
+            if (!slotBusy) {
+                slotBusy = true
+                scope.launch(Dispatchers.IO) {
+                    val success = switchBootSlot()
+                    withContext(Dispatchers.Main) {
+                        slotBusy = false
+                        Toast.makeText(
+                            context,
+                            if (success) context.getString(R.string.tools_slot_switch_success)
+                            else context.getString(R.string.tools_slot_switch_failed),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
         }
@@ -153,7 +198,10 @@ fun ToolsScreen() {
         selinuxLoading = selinuxLoading,
         spoofCpuDialogVisible = spoofCpuDialogVisible,
         currentCpuInfo = currentCpuInfo,
-        spoofCpuLoading = spoofCpuLoading
+        spoofCpuLoading = spoofCpuLoading,
+        markDialogVisible = markDialogVisible,
+        currentSlotSuffix = currentSlotSuffix,
+        slotBusy = slotBusy
     )
 
     when (LocalUiMode.current) {
@@ -179,6 +227,13 @@ fun ToolsScreen() {
                 onDismiss = actions.onDismissSpoofCpuDialog,
                 onApply = actions.onApplySpoofCpu
             )
+        }
+    }
+
+    if (markDialogVisible) {
+        when (LocalUiMode.current) {
+            UiMode.Miuix -> MarkDialogMiuix(onDismiss = actions.onDismissMarkDialog)
+            UiMode.Material -> MarkDialogMaterial(onDismiss = actions.onDismissMarkDialog)
         }
     }
 }

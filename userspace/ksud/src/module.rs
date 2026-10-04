@@ -246,12 +246,23 @@ pub fn exec_script<T: AsRef<Path>>(path: T, wait: bool, timeout: Duration) -> Re
         .arg(path.as_ref())
         .envs(get_common_script_envs(validated_module_id));
 
-    let result = {
-        if wait {
-            command.spawn()?.wait_timeout(timeout).map(|_| ())
-        } else {
-            command.spawn().map(|_| ())
+    let result: std::io::Result<()> = if wait {
+        let mut child = command.spawn()?;
+        match child.wait_timeout(timeout) {
+            Ok(Some(_)) => Ok(()),
+            Ok(None) => {
+                warn!(
+                    "exec {} timed out after {:?}, killing it",
+                    path.as_ref().display(),
+                    timeout
+                );
+                let _ = child.kill();
+                child.wait().map(|_| ())
+            }
+            Err(e) => Err(e),
         }
+    } else {
+        command.spawn().map(|_| ())
     };
     result.map_err(|e| anyhow!("Failed to exec {}: {e}", path.as_ref().display()))
 }

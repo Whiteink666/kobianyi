@@ -15,6 +15,7 @@ import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.ShellUtils
 import com.topjohnwu.superuser.internal.UiThreadHandler
 import com.sukisu.ultra.ui.util.createRootShell
+import com.sukisu.ultra.ui.util.getKsuDaemonPath
 import com.sukisu.ultra.ui.util.listModules
 import com.sukisu.ultra.ui.util.withNewRootShell
 import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
@@ -253,6 +254,26 @@ class WebViewInterface(private val state: WebUIState) {
             }
         }
         return jsonArray.toString()
+    }
+
+    @JavascriptInterface
+    fun getProp(name: String): String {
+        val escapedName = name.replace("'", "'\\''")
+        return withNewRootShell(true) { ShellUtils.fastCmd(this, "getprop '$escapedName'") }.trim()
+    }
+
+    @JavascriptInterface
+    fun setProp(name: String, value: String): String {
+        val escapedName = name.replace("'", "'\\''")
+        val escapedValue = value.replace("'", "'\\''")
+        // ksud ships a Magisk compatible resetprop subcommand; use it so that
+        // read-only properties can be modified, and only fall back to setprop
+        val command = "${getKsuDaemonPath()} resetprop '$escapedName' '$escapedValue' " +
+            "|| setprop '$escapedName' '$escapedValue'"
+        val result = withNewRootShell(true) {
+            newJob().add(command).to(ArrayList(), ArrayList()).exec()
+        }
+        return if (result.isSuccess) "true" else "false"
     }
 
     @JavascriptInterface

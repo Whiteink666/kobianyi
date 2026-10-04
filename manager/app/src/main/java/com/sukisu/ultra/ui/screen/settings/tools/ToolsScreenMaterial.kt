@@ -17,10 +17,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Construction
 import androidx.compose.material.icons.rounded.FolderDelete
+import androidx.compose.material.icons.rounded.Label
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
@@ -129,6 +132,89 @@ fun ToolsMaterial(
                             )
                         })
                     )
+
+                    SegmentedColumn(
+                        modifier = Modifier.padding(top = 12.dp),
+                        content = listOf({
+                            val markTitle = stringResource(id = R.string.tools_mark_title)
+                            SegmentedListItem(
+                                onClick = actions.onOpenMarkDialog,
+                                headlineContent = { Text(markTitle) },
+                                supportingContent = { Text(stringResource(R.string.tools_mark_summary)) },
+                                leadingContent = {
+                                    Icon(
+                                        Icons.Rounded.Label,
+                                        markTitle,
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            )
+                        })
+                    )
+
+                    SegmentedColumn(
+                        modifier = Modifier.padding(top = 12.dp),
+                        content = listOf(
+                            {
+                                val busyboxTitle = stringResource(id = R.string.tools_extract_busybox)
+                                SegmentedListItem(
+                                    onClick = { actions.onExtractBinary("busybox") },
+                                    headlineContent = { Text(busyboxTitle) },
+                                    supportingContent = { Text(stringResource(R.string.tools_extract_summary)) },
+                                    leadingContent = {
+                                        Icon(
+                                            Icons.Rounded.Construction,
+                                            busyboxTitle,
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                )
+                            },
+                            {
+                                val bootctlTitle = stringResource(id = R.string.tools_extract_bootctl)
+                                SegmentedListItem(
+                                    onClick = { actions.onExtractBinary("bootctl") },
+                                    headlineContent = { Text(bootctlTitle) },
+                                    supportingContent = { Text(stringResource(R.string.tools_extract_summary)) },
+                                    leadingContent = {
+                                        Icon(
+                                            Icons.Rounded.Construction,
+                                            bootctlTitle,
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                )
+                            }
+                        )
+                    )
+
+                    if (state.currentSlotSuffix.isNotEmpty()) {
+                        SegmentedColumn(
+                            modifier = Modifier.padding(top = 12.dp),
+                            content = listOf({
+                                val slotTitle = stringResource(id = R.string.tools_slot_switch_title)
+                                SegmentedListItem(
+                                    onClick = actions.onSwitchSlot,
+                                    headlineContent = { Text(slotTitle) },
+                                    supportingContent = {
+                                        Text(
+                                            stringResource(
+                                                R.string.tools_slot_switch_summary,
+                                                state.currentSlotSuffix.removePrefix("_").uppercase()
+                                            )
+                                        )
+                                    },
+                                    leadingContent = {
+                                        Icon(
+                                            Icons.Rounded.SwapHoriz,
+                                            slotTitle,
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                )
+                            })
+                        )
+                    }
 
                     AllowlistBackupSectionMaterial(
                         onBackup = actions.onBackupAllowlist,

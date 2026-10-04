@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -24,6 +25,10 @@ import com.sukisu.ultra.ui.screen.flash.UninstallType.NONE
 import com.sukisu.ultra.ui.screen.flash.UninstallType.PERMANENT
 import com.sukisu.ultra.ui.screen.flash.UninstallType.RESTORE_STOCK_IMAGE
 import com.sukisu.ultra.ui.screen.flash.UninstallType.TEMPORARY
+import com.sukisu.ultra.ui.util.uninstallTemporary
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -38,14 +43,12 @@ fun UninstallDialogMiuix(
 ) {
     val context = LocalContext.current
     val navigator = LocalNavigator.current
+    val scope = rememberCoroutineScope()
     val options = listOf(
-        // TEMPORARY,
+        TEMPORARY,
         PERMANENT,
         RESTORE_STOCK_IMAGE
     )
-    val showTodo = {
-        Toast.makeText(context, "TODO", Toast.LENGTH_SHORT).show()
-    }
     val showConfirmDialog = remember(show) { mutableStateOf(false) }
     val runType = remember(show) { mutableStateOf<UninstallType?>(null) }
 
@@ -55,7 +58,20 @@ fun UninstallDialogMiuix(
 
             RESTORE_STOCK_IMAGE -> navigator.push(Route.Flash(FlashIt.FlashRestore))
 
-            TEMPORARY -> showTodo()
+            TEMPORARY -> {
+                Toast.makeText(context, R.string.settings_uninstall_temporary_started, Toast.LENGTH_SHORT).show()
+                scope.launch(Dispatchers.IO) {
+                    val success = uninstallTemporary()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            if (success) R.string.settings_uninstall_temporary_success
+                            else R.string.settings_uninstall_temporary_failed,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
             NONE -> Unit
         }
     }

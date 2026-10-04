@@ -30,26 +30,36 @@ import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.CheckboxLocation
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
 
+/**
+ * Sentinel selection meaning "no manual KMI, let ksud detect it".
+ * A real KMI never looks like this (android\d+-\d+\.\d+).
+ */
+internal const val KMI_AUTO_DETECT = "auto-detect"
+
 @Composable
 fun ChooseKmiDialogMiuix(
     show: Boolean,
     onDismissRequest: () -> Unit,
     onSelected: (String?) -> Unit
 ) {
-    val supportedKMIs by produceState(initialValue = emptyList()) {
+    val supportedKMIs by produceState(initialValue = emptyList<String>()) {
         value = getSupportedKmis()
     }
     val currentKmi by produceState(initialValue = "") {
         value = getCurrentKmi()
     }
-    val currentSelection = rememberSaveable(currentKmi) { mutableStateOf(currentKmi) }
+    val detected = currentKmi.isNotBlank()
+    val initialSelection = if (currentKmi in supportedKMIs) currentKmi else KMI_AUTO_DETECT
+    val currentSelection = rememberSaveable(currentKmi, supportedKMIs) {
+        mutableStateOf(initialSelection)
+    }
     OverlayDialog(
         show = show,
         title = stringResource(R.string.select_kmi),
         summary = stringResource(R.string.current_kmi, currentKmi.let { it.ifBlank { "Unknown" } }),
         onDismissRequest = {
             onDismissRequest()
-            currentSelection.value = currentKmi
+            currentSelection.value = initialSelection
         },
         insideMargin = DpSize(0.dp, 24.dp),
         content = {
@@ -68,6 +78,25 @@ fun ChooseKmiDialogMiuix(
                             }
                         )
                     }
+                    item {
+                        CheckboxPreference(
+                            title = stringResource(R.string.select_kmi_auto),
+                            summary = stringResource(R.string.select_kmi_auto_summary),
+                            insideMargin = PaddingValues(horizontal = 30.dp, vertical = 16.dp),
+                            checkboxLocation = CheckboxLocation.End,
+                            checked = currentSelection.value == KMI_AUTO_DETECT,
+                            holdDownState = currentSelection.value == KMI_AUTO_DETECT,
+                            onCheckedChange = { _ ->
+                                currentSelection.value = KMI_AUTO_DETECT
+                            }
+                        )
+                    }
+                }
+                if (supportedKMIs.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.select_kmi_no_lkm),
+                        modifier = Modifier.padding(horizontal = 30.dp)
+                    )
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(
@@ -77,16 +106,19 @@ fun ChooseKmiDialogMiuix(
                     TextButton(
                         onClick = {
                             onDismissRequest()
-                            currentSelection.value = currentKmi
+                            currentSelection.value = initialSelection
                         },
                         text = stringResource(android.R.string.cancel),
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(modifier = Modifier.width(20.dp))
                     TextButton(
-                        enabled = supportedKMIs.contains(currentSelection.value),
+                        enabled = currentSelection.value == KMI_AUTO_DETECT ||
+                            supportedKMIs.contains(currentSelection.value) ||
+                            (detected && currentSelection.value == currentKmi),
                         onClick = {
-                            onSelected(currentSelection.value)
+                            val selection = currentSelection.value
+                            onSelected(if (selection == KMI_AUTO_DETECT) null else selection)
                             onDismissRequest()
                         },
                         text = stringResource(R.string.confirm),

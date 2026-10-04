@@ -59,6 +59,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -529,7 +530,8 @@ private fun ModuleList(
                     }
                 },
                 onExecuteAction = { actions.onExecuteModuleAction(module) },
-                closeSearch = { closeSearch() }
+                closeSearch = { closeSearch() },
+                onOpenConfig = { actions.onOpenModuleConfig(module) }
             )
         }
     }
@@ -697,7 +699,8 @@ private fun ModuleItem(
     onAddShortcut: (ShortcutType) -> Unit,
     onOpenWebUi: () -> Unit,
     onExecuteAction: () -> Unit,
-    closeSearch: () -> Unit
+    closeSearch: () -> Unit,
+    onOpenConfig: () -> Unit = {}
 ) {
     val hasDescription = module.description.isNotBlank()
     val maxLinesLimit = LocalModuleDescriptionMaxLines.current
@@ -936,6 +939,18 @@ private fun ModuleItem(
 
                         Spacer(Modifier.width(12.dp))
                     }
+                }
+
+                FilledTonalButton(
+                    modifier = Modifier.defaultMinSize(52.dp, 32.dp),
+                    onClick = onOpenConfig,
+                    contentPadding = ButtonDefaults.TextButtonContentPadding
+                ) {
+                    Icon(
+                        modifier = Modifier.size(20.dp),
+                        imageVector = Icons.Outlined.Tune,
+                        contentDescription = stringResource(R.string.module_config_title)
+                    )
                 }
 
                 FilledTonalButton(

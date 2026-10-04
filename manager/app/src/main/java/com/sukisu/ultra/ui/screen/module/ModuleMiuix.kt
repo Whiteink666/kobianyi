@@ -60,6 +60,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -746,6 +747,9 @@ private fun ModuleList(
                         if (module.hasWebUi) {
                             actions.onOpenWebUi(module)
                         }
+                    },
+                    onOpenConfig = {
+                        actions.onOpenModuleConfig(module)
                     }
                 )
             }
@@ -766,7 +770,8 @@ fun ModuleItem(
     onUpdate: () -> Unit,
     onExecuteAction: () -> Unit,
     onAddActionShortcut: (ShortcutType) -> Unit,
-    onOpenWebUi: () -> Unit
+    onOpenWebUi: () -> Unit,
+    onOpenConfig: () -> Unit = {}
 ) {
     val secondaryContainer = colorScheme.secondaryContainer.copy(alpha = 0.8f)
     val actionIconTint = colorScheme.onSurface.copy(alpha = if (isInDarkTheme()) 0.7f else 0.9f)
@@ -1023,6 +1028,19 @@ fun ModuleItem(
                         )
                     }
                 }
+            }
+            IconButton(
+                minHeight = 35.dp,
+                minWidth = 35.dp,
+                backgroundColor = secondaryContainer,
+                onClick = onOpenConfig,
+            ) {
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    imageVector = Icons.Rounded.Tune,
+                    tint = actionIconTint,
+                    contentDescription = stringResource(R.string.module_config_title)
+                )
             }
             IconButton(
                 minHeight = 35.dp,

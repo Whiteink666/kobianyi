@@ -112,7 +112,7 @@ pub fn on_post_data_fs() -> Result<()> {
     }
 
     // exec modules post-fs-data scripts
-    // TODO: Add timeout
+    // NOTE: each script is bounded by defs::EXEC_STAGE_TIMEOUT (see module::exec_script)
     if let Err(e) = crate::module::exec_stage_script("post-fs-data", true) {
         warn!("exec post-fs-data scripts failed: {e}");
     }

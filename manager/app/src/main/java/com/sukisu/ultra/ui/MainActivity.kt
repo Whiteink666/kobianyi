@@ -256,6 +256,9 @@ class MainActivity : ComponentActivity() {
                                     entry<Route.SuSFS>(swipeDismiss = swipeDismiss)  { SuSFSScreen() }
                                     entry<Route.Tool>(swipeDismiss = swipeDismiss)  { ToolsScreen() }
                                     entry<Route.UmountManager>(swipeDismiss = swipeDismiss)  { UmountManagerScreen() }
+                                    entry<Route.ModuleConfig>(swipeDismiss = swipeDismiss) { key ->
+                                        com.sukisu.ultra.ui.screen.moduleconfig.ModuleConfigScreen(key.moduleId)
+                                    }
                             }
                         }
 

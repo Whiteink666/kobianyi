@@ -18,10 +18,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Construction
 import androidx.compose.material.icons.rounded.FolderDelete
+import androidx.compose.material.icons.rounded.Label
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -155,6 +158,87 @@ fun ToolsMiuix(
                             },
                             onClick = actions.onOpenSpoofCpuDialog
                         )
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth(),
+                    ) {
+                        val markTitle = stringResource(id = R.string.tools_mark_title)
+                        ArrowPreference(
+                            title = markTitle,
+                            summary = stringResource(R.string.tools_mark_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Label,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = markTitle,
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            onClick = actions.onOpenMarkDialog
+                        )
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth(),
+                    ) {
+                        val busyboxTitle = stringResource(id = R.string.tools_extract_busybox)
+                        ArrowPreference(
+                            title = busyboxTitle,
+                            summary = stringResource(R.string.tools_extract_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Construction,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = busyboxTitle,
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            onClick = { actions.onExtractBinary("busybox") }
+                        )
+                        ArrowPreference(
+                            title = stringResource(id = R.string.tools_extract_bootctl),
+                            summary = stringResource(R.string.tools_extract_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Construction,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.tools_extract_bootctl),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            onClick = { actions.onExtractBinary("bootctl") }
+                        )
+                    }
+
+                    if (state.currentSlotSuffix.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier
+                                .padding(top = 12.dp)
+                                .fillMaxWidth(),
+                        ) {
+                            val slotTitle = stringResource(id = R.string.tools_slot_switch_title)
+                            ArrowPreference(
+                                title = slotTitle,
+                                summary = stringResource(
+                                    R.string.tools_slot_switch_summary,
+                                    state.currentSlotSuffix.removePrefix("_").uppercase()
+                                ),
+                                startAction = {
+                                    Icon(
+                                        Icons.Rounded.SwapHoriz,
+                                        modifier = Modifier.padding(end = 6.dp),
+                                        contentDescription = slotTitle,
+                                        tint = colorScheme.onBackground
+                                    )
+                                },
+                                onClick = actions.onSwitchSlot
+                            )
+                        }
                     }
 
                     AllowlistBackupSectionMiuix(

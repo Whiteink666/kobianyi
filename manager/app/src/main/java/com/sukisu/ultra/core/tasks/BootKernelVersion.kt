@@ -150,11 +150,11 @@ object BootKernelVersion {
             val b0 = buffer[i].toInt() and 0xFF
             val b1 = buffer[i + 1].toInt() and 0xFF
             val b2 = buffer[i + 2].toInt() and 0xFF
-            val b3 = buffer[i + 3].toInt() and 0xFF
             if (b1 != '.'.code || b2 < '0'.code || b2 > '9'.code) continue
-            if (b0 != '5'.code || b3 < '0'.code || b3 > '9'.code) {
-                if (b0 < '6'.code || b0 > '9'.code) continue
-            }
+            // Major must be 5 or newer. The old check also required b3 to be a
+            // digit, which skipped every 5.4 kernel (its 4th byte is the '.' of
+            // "5.4."), so those images never yielded a KMI.
+            if (b0 < '5'.code || b0 > '9'.code) continue
             val end = minOf(buffer.size, i + 100)
             val nul = (i until end).firstOrNull { buffer[it] == 0.toByte() } ?: end
             val text = String(buffer, i, nul - i, StandardCharsets.UTF_8)

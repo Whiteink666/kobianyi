@@ -172,6 +172,9 @@ fun ModulePager(
             navigator.push(Route.ExecuteModuleAction(module.id))
             viewModel.markNeedRefresh()
         },
+        onOpenModuleConfig = { module ->
+            navigator.push(Route.ModuleConfig(module.id))
+        },
     )
 
     when (uiMode) {
