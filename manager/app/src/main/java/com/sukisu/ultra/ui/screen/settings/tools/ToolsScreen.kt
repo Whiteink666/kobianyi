@@ -18,9 +18,7 @@ import com.sukisu.ultra.ui.UiMode
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.navigation3.Route
 import com.sukisu.ultra.ui.util.extractKsudBinary
-import com.sukisu.ultra.ui.util.getBootSlotSuffix
 import com.sukisu.ultra.ui.util.spoofCpu
-import com.sukisu.ultra.ui.util.switchBootSlot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -38,8 +36,6 @@ fun ToolsScreen() {
     var currentCpuInfo by remember { mutableStateOf<CpuInfo?>(null) }
     var spoofCpuLoading by remember { mutableStateOf(false) }
     var markDialogVisible by remember { mutableStateOf(false) }
-    var currentSlotSuffix by remember { mutableStateOf("") }
-    var slotBusy by remember { mutableStateOf(false) }
 
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -79,8 +75,6 @@ fun ToolsScreen() {
         selinuxLoading = false
         
         currentCpuInfo = withContext(Dispatchers.IO) { readCurrentCpuIdentity() }
-
-        currentSlotSuffix = getBootSlotSuffix()
     }
 
     val actions = ToolsActions(
@@ -173,23 +167,6 @@ fun ToolsScreen() {
                     ).show()
                 }
             }
-        },
-        onSwitchSlot = {
-            if (!slotBusy) {
-                slotBusy = true
-                scope.launch(Dispatchers.IO) {
-                    val success = switchBootSlot()
-                    withContext(Dispatchers.Main) {
-                        slotBusy = false
-                        Toast.makeText(
-                            context,
-                            if (success) context.getString(R.string.tools_slot_switch_success)
-                            else context.getString(R.string.tools_slot_switch_failed),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
         }
     )
 
@@ -199,9 +176,7 @@ fun ToolsScreen() {
         spoofCpuDialogVisible = spoofCpuDialogVisible,
         currentCpuInfo = currentCpuInfo,
         spoofCpuLoading = spoofCpuLoading,
-        markDialogVisible = markDialogVisible,
-        currentSlotSuffix = currentSlotSuffix,
-        slotBusy = slotBusy
+        markDialogVisible = markDialogVisible
     )
 
     when (LocalUiMode.current) {

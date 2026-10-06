@@ -8,6 +8,7 @@ import androidx.annotation.StringRes
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import com.sukisu.ultra.R
+import com.sukisu.ultra.ui.util.BootImageInspector
 
 @Parcelize
 sealed class InstallMethod : Parcelable {
@@ -70,4 +71,21 @@ fun isKoFile(context: Context, uri: Uri): Boolean {
     } catch (_: Throwable) {
         false
     }
+}
+
+/** 选中的镜像是否已被 KernelSU / Magisk 打过补丁 */
+fun isPatchedBootImage(kindOrdinal: Int): Boolean {
+    if (kindOrdinal < 0) return false
+    return BootImageInspector.Kind.values()[kindOrdinal].isPatched
+}
+
+/** 检测结果的展示文案；null 表示还没检测过，UI 上不显示 */
+@StringRes
+fun bootImageStatusRes(kindOrdinal: Int): Int? = when (kindOrdinal) {
+    BootImageInspector.Kind.STOCK.ordinal -> R.string.install_image_stock
+    BootImageInspector.Kind.KERNELSU.ordinal -> R.string.install_image_kernelsu_patched
+    BootImageInspector.Kind.MAGISK.ordinal -> R.string.install_image_magisk_patched
+    BootImageInspector.Kind.UNKNOWN.ordinal -> R.string.install_image_unknown
+    BootImageInspector.Kind.INVALID.ordinal -> R.string.install_image_invalid
+    else -> null
 }

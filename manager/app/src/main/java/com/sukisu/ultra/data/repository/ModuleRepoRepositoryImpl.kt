@@ -14,7 +14,8 @@ import org.json.JSONObject
 class ModuleRepoRepositoryImpl : ModuleRepoRepository {
 
     companion object {
-        private const val MODULES_URL = "https://modules.kernelsu.org/modules.json"
+        private const val MODULES_URL =
+            "https://raw.githubusercontent.com/Whiteink666/Whiteink-Manager/main/modules.json"
     }
 
     override suspend fun fetchModules(): Result<List<RepoModule>> = withContext(Dispatchers.IO) {

@@ -292,6 +292,12 @@
     <string name="module_shortcut_scheme_copied">已复制 URL Scheme</string>
     <string name="install_force_backup">备份为原厂镜像</string>
     <string name="install_force_backup_summary">请确保你选择的 boot 镜像是原厂镜像</string>
+    <string name="install_force_backup_blocked">已修补的镜像不能作为原厂备份保存</string>
+    <string name="install_image_kernelsu_patched">该镜像已打过 KernelSU 补丁</string>
+    <string name="install_image_magisk_patched">该镜像已打过 Magisk 补丁</string>
+    <string name="install_image_stock">已确认为原厂镜像</string>
+    <string name="install_image_unknown">无法判断（ramdisk 压缩格式不支持）</string>
+    <string name="install_image_invalid">这不是有效的 boot 镜像</string>
     <string name="settings_sulog">SU 日志</string>
     <string name="settings_sulog_summary">将 Root 相关事件记录到 KernelSU 的 SU 日志文件中</string>
     <string name="sulog_log_files">日志文件</string>
@@ -468,11 +474,6 @@
     <string name="tools_extract_summary">提取内嵌二进制到 /data/local/tmp</string>
     <string name="tools_extract_binary_success">已提取 %1$s 到 %2$s</string>
     <string name="tools_extract_binary_failed">提取 %1$s 失败</string>
-    <!-- Boot Slot -->
-    <string name="tools_slot_switch_title">切换启动槽位</string>
-    <string name="tools_slot_switch_summary">当前槽位：%1$s，点击切换活动槽位</string>
-    <string name="tools_slot_switch_success">已切换活动启动槽位</string>
-    <string name="tools_slot_switch_failed">切换启动槽位失败</string>
     <!-- Module Config -->
     <string name="module_config_title">模块配置</string>
     <string name="module_config_empty">暂无配置项</string>

@@ -23,6 +23,7 @@ fun AboutScreen() {
         title = stringResource(R.string.about),
         appName = stringResource(R.string.app_name),
         versionName = BuildConfig.VERSION_NAME,
+        buildId = BuildConfig.GIT_COMMIT,
         links = extractLinks(htmlString),
     )
     val actions = AboutScreenActions(

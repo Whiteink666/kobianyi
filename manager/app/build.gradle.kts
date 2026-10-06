@@ -28,6 +28,22 @@ val defaultManagerName = if (isPrBuild) "FurryRoot PR" else "FurryRoot"
 val managerPackageName = project.findProperty("KSU_PACKAGE_NAME")?.toString() ?: defaultManagerPackageName
 val managerName = project.findProperty("KSU_NAME")?.toString() ?: defaultManagerName
 
+// Short commit of the enclosing git repo, shown in About. Falls back to "unknown"
+// when git is unavailable (e.g. building from a source archive).
+val gitCommitHash: String = run {
+    try {
+        val process = ProcessBuilder("git", "rev-parse", "--short=8", "HEAD")
+            .directory(rootDir)
+            .redirectErrorStream(true)
+            .start()
+        val output = process.inputStream.bufferedReader().readText().trim()
+        process.waitFor()
+        if (process.exitValue() == 0 && output.isNotBlank()) output else "unknown"
+    } catch (_: Exception) {
+        "unknown"
+    }
+}
+
 apksign {
     storeFileProperty = "KEYSTORE_FILE"
     storePasswordProperty = "KEYSTORE_PASSWORD"
@@ -149,6 +165,7 @@ android {
         applicationId = managerPackageName
 
         buildConfigField("boolean", "IS_PR_BUILD", isPrBuild.toString())
+        buildConfigField("String", "GIT_COMMIT", "\"$gitCommitHash\"")
         resValue("string", "app_name", managerName)
 
         externalNativeBuild {

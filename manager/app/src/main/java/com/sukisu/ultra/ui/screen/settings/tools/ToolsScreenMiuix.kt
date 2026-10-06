@@ -215,32 +215,6 @@ fun ToolsMiuix(
                         )
                     }
 
-                    if (state.currentSlotSuffix.isNotEmpty()) {
-                        Card(
-                            modifier = Modifier
-                                .padding(top = 12.dp)
-                                .fillMaxWidth(),
-                        ) {
-                            val slotTitle = stringResource(id = R.string.tools_slot_switch_title)
-                            ArrowPreference(
-                                title = slotTitle,
-                                summary = stringResource(
-                                    R.string.tools_slot_switch_summary,
-                                    state.currentSlotSuffix.removePrefix("_").uppercase()
-                                ),
-                                startAction = {
-                                    Icon(
-                                        Icons.Rounded.SwapHoriz,
-                                        modifier = Modifier.padding(end = 6.dp),
-                                        contentDescription = slotTitle,
-                                        tint = colorScheme.onBackground
-                                    )
-                                },
-                                onClick = actions.onSwitchSlot
-                            )
-                        }
-                    }
-
                     AllowlistBackupSectionMiuix(
                         onBackup = actions.onBackupAllowlist,
                         onRestore = actions.onRestoreAllowlist

@@ -46,7 +46,9 @@ internal suspend fun isDownloadAvailable(uri: Uri): Boolean = withContext(Dispat
 
 fun checkNewVersion(): LatestVersionInfo {
     if (!isNetworkAvailable(ksuApp)) return LatestVersionInfo()
-    val url = "https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/releases/latest"
+    // 必须指向我们自己的仓库：官方 APK 的签名与 ko 里注册的证书不同，
+    // 升级到官方 Manager 会导致 root 管理权丢失
+    val url = "https://api.github.com/repos/Whiteink666/Whiteink-Manager/releases/latest"
     // default null value if failed
     val defaultValue = LatestVersionInfo()
     runCatching {
@@ -67,10 +69,11 @@ fun checkNewVersion(): LatestVersionInfo {
                         continue
                     }
 
-                    val regex = Regex("v(.+?)_(\\d+)-")
-                    val matchResult = regex.find(name) ?: continue
-                    matchResult.groupValues[1]
-                    val versionCode = matchResult.groupValues[2].toLong()
+                    // 同时兼容官方 v<ver>_<code>- 和我们 FurryRoot_<commit>_<code>- 的命名。
+                    // 取最后一个匹配：版本号永远在文件名末尾，取第一个可能命中别的片段
+                    val versionCode = Regex("_(\\d+)-").findAll(name).lastOrNull()
+                        ?.groupValues?.getOrNull(1)?.toLongOrNull()
+                        ?: continue
                     val downloadUrl = asset.getString("browser_download_url")
 
                     return LatestVersionInfo(

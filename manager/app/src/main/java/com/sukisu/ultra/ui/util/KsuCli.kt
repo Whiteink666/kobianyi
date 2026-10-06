@@ -987,35 +987,6 @@ fun extractKsudBinary(name: String, destPath: String): Boolean {
     return result.isSuccess
 }
 
-// A/B 槽位。解析必须走 ksud：部分机型只提供 ro.boot.slot，直接读
-// ro.boot.slot_suffix 会得到空串，进而把当前槽误判成另一个槽。
-suspend fun getBootSlotSuffix(): String = getSlotSuffix(false)
-
-suspend fun switchBootSlot(): Boolean = withContext(Dispatchers.IO) {
-    val shell = getRootShell(true)
-    val bootctlPath = "/data/local/tmp/ksu_bootctl"
-    val extract = shell.newJob()
-        .add("${getKsuDaemonPath()} debug extract-binary bootctl $bootctlPath")
-        .to(ArrayList<String>(), null).exec()
-    if (!extract.isSuccess) {
-        Log.e(TAG, "failed to extract bootctl")
-        return@withContext false
-    }
-    val currentSlot = getSlotSuffix(false)
-    if (currentSlot.isBlank()) {
-        // cannot tell which slot is active: switching blindly may re-activate
-        // the slot we are already running from
-        Log.e(TAG, "cannot determine current boot slot, refusing to switch")
-        return@withContext false
-    }
-    val targetSlot = if (currentSlot.endsWith("b")) 0 else 1
-    val result = shell.newJob()
-        .add("$bootctlPath set-active-boot-slot $targetSlot")
-        .to(ArrayList<String>(), null).exec()
-    Log.i(TAG, "switch boot slot from '$currentSlot' to $targetSlot result: ${result.isSuccess}")
-    result.isSuccess
-}
-
 // 模块配置（ksud module config，通过 KSU_MODULE 环境变量指定模块命名空间）
 private fun shellQuote(value: String): String = "'${value.replace("'", "'\\''")}'"
 

@@ -175,6 +175,12 @@
     <string name="install_upload_lkm_file">Use local LKM file</string>
     <string name="install_force_backup">Backup as stock image</string>
     <string name="install_force_backup_summary">Please make sure your selected boot image is a stock image</string>
+    <string name="install_force_backup_blocked">A patched image cannot be kept as the stock backup</string>
+    <string name="install_image_kernelsu_patched">This image is already patched by KernelSU</string>
+    <string name="install_image_magisk_patched">This image is already patched by Magisk</string>
+    <string name="install_image_stock">Verified as a stock image</string>
+    <string name="install_image_unknown">Cannot tell (unsupported ramdisk compression)</string>
+    <string name="install_image_invalid">Not a valid boot image</string>
     <string name="install_only_support_ko_file">Only .ko files are supported</string>
     <string name="select_file_tip">%1$s partition image is recommended</string>
     <string name="select_kmi">Select KMI</string>
@@ -482,11 +488,6 @@
     <string name="tools_extract_summary">Extract the embedded binary to /data/local/tmp</string>
     <string name="tools_extract_binary_success">Extracted %1$s to %2$s</string>
     <string name="tools_extract_binary_failed">Failed to extract %1$s</string>
-    <!-- Boot Slot -->
-    <string name="tools_slot_switch_title">Switch boot slot</string>
-    <string name="tools_slot_switch_summary">Current slot: %1$s. Tap to switch the active slot</string>
-    <string name="tools_slot_switch_success">Active boot slot switched</string>
-    <string name="tools_slot_switch_failed">Failed to switch boot slot</string>
     <!-- Module Config -->
     <string name="module_config_title">Module config</string>
     <string name="module_config_empty">No config entries</string>

@@ -34,6 +34,28 @@ data class ReleaseAssetInfo(
     val downloadCount: Int
 )
 
+// 模块仓库数据托管在我们自己的仓库里（官方 modules.kernelsu.org 已停止服务），
+// 自己仓库里没有该模块时再回退到官方地址
+private const val REPO_BASE =
+    "https://raw.githubusercontent.com/Whiteink666/Whiteink-Manager/main"
+private const val OFFICIAL_BASE = "https://modules.kernelsu.org"
+
+/** 自己的仓库优先，取不到再回退官方 */
+private fun fetchModuleJson(moduleId: String): JSONObject? {
+    if (!isNetworkAvailable(ksuApp)) return null
+    val path = "module/$moduleId.json"
+    for (base in listOf(REPO_BASE, OFFICIAL_BASE)) {
+        val obj = runCatching {
+            ksuApp.okhttpClient.newCall(Request.Builder().url("$base/$path").build())
+                .execute().use { resp ->
+                    if (!resp.isSuccessful) null else JSONObject(resp.body.string())
+                }
+        }.getOrNull()
+        if (obj != null) return obj
+    }
+    return null
+}
+
 fun sanitizeVersionString(version: String): String {
     return version.replace(Regex("[^a-zA-Z0-9.\\-_]"), "_")
 }
@@ -44,42 +66,30 @@ fun stripTicks(s: String): String {
 }
 
 fun fetchReleaseDescriptionHtml(moduleId: String, latestTag: String): String? {
-    if (!isNetworkAvailable(ksuApp)) return null
-    val url = "https://modules.kernelsu.org/module/$moduleId.json"
+    val obj = fetchModuleJson(moduleId) ?: return null
     return runCatching {
-        ksuApp.okhttpClient.newCall(Request.Builder().url(url).build()).execute().use { resp ->
-            if (!resp.isSuccessful) null else {
-                val body = resp.body.string()
-                val obj = JSONObject(body)
-                val releasesArray = obj.optJSONArray("releases") ?: return@use null
-                var fallbackHtml: String? = null
-                for (i in 0 until releasesArray.length()) {
-                    val r = releasesArray.optJSONObject(i) ?: continue
-                    val descHtml = r.optString("descriptionHTML", "")
-                    if (fallbackHtml == null && descHtml.isNotBlank()) {
-                        fallbackHtml = descHtml
-                    }
-                    val rname = r.optString("name", r.optString("tagName", r.optString("version", "")))
-                    if (rname == latestTag && descHtml.isNotBlank()) {
-                        return@use descHtml
-                    }
-                }
-                fallbackHtml
+        val releasesArray = obj.optJSONArray("releases") ?: return@runCatching null
+        var fallbackHtml: String? = null
+        for (i in 0 until releasesArray.length()) {
+            val r = releasesArray.optJSONObject(i) ?: continue
+            val descHtml = r.optString("descriptionHTML", "")
+            if (fallbackHtml == null && descHtml.isNotBlank()) {
+                fallbackHtml = descHtml
+            }
+            val rname = r.optString("name", r.optString("tagName", r.optString("version", "")))
+            if (rname == latestTag && descHtml.isNotBlank()) {
+                return@runCatching descHtml
             }
         }
+        fallbackHtml
     }.getOrNull()
 }
 
 
 fun fetchModuleDetail(moduleId: String): ModuleDetail? {
-    if (!isNetworkAvailable(ksuApp)) return null
-    val url = "https://modules.kernelsu.org/module/$moduleId.json"
+    val obj = fetchModuleJson(moduleId) ?: return null
     return runCatching {
-        ksuApp.okhttpClient.newCall(Request.Builder().url(url).build()).execute().use { resp ->
-            if (!resp.isSuccessful) return@use null
-            val body = resp.body.string()
-            val obj = JSONObject(body)
-            val readme = obj.optString("readme", "")
+        val readme = obj.optString("readme", "")
             val readmeHtml = obj.optString("readmeHTML", "")
             val homepageUrl = stripTicks(obj.optString("homepageUrl", ""))
             val sourceUrl = stripTicks(obj.optString("sourceUrl", ""))
@@ -129,18 +139,17 @@ fun fetchModuleDetail(moduleId: String): ModuleDetail? {
                 }
             } else emptyList()
 
-            return@use ModuleDetail(
-                readme = readme,
-                readmeHtml = readmeHtml,
-                latestTag = latestTag,
-                latestTime = latestTime,
-                latestAssetName = latestAssetName,
-                latestAssetUrl = latestAssetUrl,
-                releases = releases,
-                homepageUrl = homepageUrl,
-                sourceUrl = sourceUrl,
-                url = url
-            )
-        }
+        ModuleDetail(
+            readme = readme,
+            readmeHtml = readmeHtml,
+            latestTag = latestTag,
+            latestTime = latestTime,
+            latestAssetName = latestAssetName,
+            latestAssetUrl = latestAssetUrl,
+            releases = releases,
+            homepageUrl = homepageUrl,
+            sourceUrl = sourceUrl,
+            url = url
+        )
     }.getOrNull()
 }

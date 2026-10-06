@@ -362,6 +362,17 @@ private fun AboutContent(
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
             )
+            if (state.buildId != "unknown") {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer { alpha = 1 - versionCodeProgress },
+                    color = colorScheme.onSurfaceVariantSummary,
+                    text = "Build ${state.buildId}",
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
 
         // Scrollable content

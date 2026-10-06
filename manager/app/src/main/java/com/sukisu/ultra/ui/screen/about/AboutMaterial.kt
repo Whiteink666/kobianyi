@@ -94,6 +94,14 @@ fun AboutScreenMaterial(
                         text = state.versionName,
                         fontSize = MaterialTheme.typography.bodyMedium.fontSize
                     )
+                    if (state.buildId != "unknown") {
+                        Text(
+                            modifier = Modifier.padding(top = 2.dp),
+                            text = "Build ${state.buildId}",
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             item {

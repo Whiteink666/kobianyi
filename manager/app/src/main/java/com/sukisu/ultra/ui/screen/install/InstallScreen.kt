@@ -17,8 +17,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.dropUnlessResumed
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.sukisu.ultra.R
 import com.sukisu.ultra.getKernelVersion
 import com.sukisu.ultra.ui.LocalUiMode
@@ -76,6 +78,9 @@ fun InstallScreen(
     var allowShell by rememberSaveable { mutableStateOf(false) }
     var enableAdb by rememberSaveable { mutableStateOf(false) }
     var forceBackup by rememberSaveable { mutableStateOf(false) }
+    // 选中镜像的检测结果：BootImageInspector.Kind.ordinal，-1 表示尚未检测
+    var bootImageKind by rememberSaveable { mutableIntStateOf(-1) }
+    var inspectJob by remember { mutableStateOf<Job?>(null) }
 
     // Read the configuration from the boot image ksu_config
     val bootConfig by produceState(initialValue = BootConfig()) { value = getBootConfig() }
@@ -315,6 +320,27 @@ fun InstallScreen(
                     if (opt is InstallMethod.HorizonKernel) {
                         anyKernel3State.onHorizonKernelSelected(opt)
                     }
+                    if (opt is InstallMethod.SelectFile) {
+                        bootImageKind = -1
+                        inspectJob?.cancel()
+                        inspectJob = scope.launch {
+                            val result = withContext(Dispatchers.IO) {
+                                BootImageInspector.inspect(context, uri)
+                            }
+                            bootImageKind = result.kind.ordinal
+                            // ksud 的 do_backup 会把这份镜像存成「恢复原厂镜像」用的备份，
+                            // 若它本身已打过补丁，那份备份就被污染了 —— 救砖时会失效
+                            if (result.isPatched && forceBackup) {
+                                forceBackup = false
+                            }
+                            // 原厂是正常情况，不用打扰；其余都提示
+                            if (result.kind != BootImageInspector.Kind.STOCK) {
+                                bootImageStatusRes(result.kind.ordinal)?.let {
+                                    showMessage(context.getString(it))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -338,6 +364,7 @@ fun InstallScreen(
         enableAdb = enableAdb,
         forceBackup = forceBackup,
         canForceBackup = installMethod is InstallMethod.SelectFile,
+        bootImageKind = bootImageKind,
         spoofRelease = spoofRelease,
         spoofVersion = spoofVersion,
         anyKernel3State = anyKernel3State,
@@ -404,8 +431,16 @@ fun InstallScreen(
         onSelectEnableAdb = {
             enableAdb = it
         },
-        onSelectForceBackup = {
-            forceBackup = it
+        onSelectForceBackup = { checked ->
+            val kind = bootImageKind.takeIf { it >= 0 }
+                ?.let { BootImageInspector.Kind.values()[it] }
+            if (checked && kind != null && kind.isPatched) {
+                // 已修补的镜像会覆盖掉真正的原厂备份，直接拒绝勾选
+                showMessage(context.getString(R.string.install_force_backup_blocked))
+                forceBackup = false
+            } else {
+                forceBackup = checked
+            }
         },
         onSpoofReleaseChange = {
             spoofRelease = it

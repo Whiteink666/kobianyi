@@ -225,7 +225,11 @@ internal fun InstallScreenMiuix(
                             CheckboxPreference(
                                 title = stringResource(id = R.string.install_force_backup),
                                 checked = uiState.forceBackup,
-                                summary = stringResource(id = R.string.install_force_backup_summary),
+                                summary = if (isPatchedBootImage(uiState.bootImageKind)) {
+                                    stringResource(id = R.string.install_force_backup_blocked)
+                                } else {
+                                    stringResource(id = R.string.install_force_backup_summary)
+                                },
                                 onCheckedChange = actions.onSelectForceBackup
                             )
                         }

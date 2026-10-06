@@ -22,6 +22,8 @@ internal data class InstallUiState(
     val enableAdb: Boolean,
     val forceBackup: Boolean,
     val canForceBackup: Boolean,
+    // 选中镜像的检测结果：BootImageInspector.Kind.ordinal，-1 表示尚未检测
+    val bootImageKind: Int = -1,
     val spoofRelease: String,
     val spoofVersion: String,
     // AnyKernel3 相关状态

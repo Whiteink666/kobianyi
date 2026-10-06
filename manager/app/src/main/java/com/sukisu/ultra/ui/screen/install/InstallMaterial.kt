@@ -162,7 +162,12 @@ internal fun InstallScreenMaterial(
                     if (uiState.canForceBackup && uiState.installMethod !is InstallMethod.HorizonKernel) add {
                         SegmentedCheckboxItem(
                             title = stringResource(R.string.install_force_backup),
-                            summary = stringResource(R.string.install_force_backup_summary),
+                            summary = if (isPatchedBootImage(uiState.bootImageKind)) {
+                                stringResource(R.string.install_force_backup_blocked)
+                            } else {
+                                stringResource(R.string.install_force_backup_summary)
+                            },
+                            enabled = !isPatchedBootImage(uiState.bootImageKind),
                             onCheckedChange = actions.onSelectForceBackup,
                             checked = uiState.forceBackup,
                         )

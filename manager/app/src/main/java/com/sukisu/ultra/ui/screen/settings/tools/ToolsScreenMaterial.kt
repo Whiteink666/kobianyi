@@ -188,34 +188,6 @@ fun ToolsMaterial(
                         )
                     )
 
-                    if (state.currentSlotSuffix.isNotEmpty()) {
-                        SegmentedColumn(
-                            modifier = Modifier.padding(top = 12.dp),
-                            content = listOf({
-                                val slotTitle = stringResource(id = R.string.tools_slot_switch_title)
-                                SegmentedListItem(
-                                    onClick = actions.onSwitchSlot,
-                                    headlineContent = { Text(slotTitle) },
-                                    supportingContent = {
-                                        Text(
-                                            stringResource(
-                                                R.string.tools_slot_switch_summary,
-                                                state.currentSlotSuffix.removePrefix("_").uppercase()
-                                            )
-                                        )
-                                    },
-                                    leadingContent = {
-                                        Icon(
-                                            Icons.Rounded.SwapHoriz,
-                                            slotTitle,
-                                            tint = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                )
-                            })
-                        )
-                    }
-
                     AllowlistBackupSectionMaterial(
                         onBackup = actions.onBackupAllowlist,
                         onRestore = actions.onRestoreAllowlist
