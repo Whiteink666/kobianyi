@@ -101,6 +101,9 @@ REPO_OWNER  := SukiSU-Ultra
 REPO_NAME   := SukiSU-Ultra
 REPO_BRANCH := main
 
+# 这三个只用于下面的 GITHUB_API_BASE：KSU_VERSION（Manager 用来判断内核
+# 新旧）由上游 commit 数算出，必须与 Manager 的 versionCode 保持同一套
+# 基准，换成自己的仓库会让版本号掉回 40000 附近，Manager 会误报“内核过旧”。
 VERSION_BASE    := 40000
 VERSION_OFFSET  := 2815
 
@@ -111,7 +114,9 @@ KSU_SRC := $(if $(filter $(srctree),$(src)),$(src),$(srctree)/$(src))
 KSU_SRC := $(if $(wildcard $(KSU_SRC)/../.git),$(KSU_SRC),$(MDIR))
 
 git_short_sha    = $(shell cd $(KSU_SRC) && $(GIT_BIN) rev-parse --short=8 HEAD 2>/dev/null)
-git_branch       = $(shell cd $(KSU_SRC) && $(GIT_BIN) rev-parse --abbrev-ref HEAD 2>/dev/null)
+# CI 的 checkout 是 detached HEAD，git 会把分支名报成 "HEAD"；
+# workflow 通过 KSU_GIT_BRANCH 传入真实分支名（github.ref_name）
+git_branch       = $(if $(KSU_GIT_BRANCH),$(KSU_GIT_BRANCH),$(shell cd $(KSU_SRC) && $(GIT_BIN) rev-parse --abbrev-ref HEAD 2>/dev/null))
 git_commit_count = $(shell cd $(KSU_SRC) && $(GIT_BIN) rev-list --count $(REPO_BRANCH) 2>/dev/null)
 git_latest_tag   = $(shell cd $(KSU_SRC) && $(GIT_BIN) describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 
@@ -122,9 +127,16 @@ KSU_GITHUB_VER   := $(shell $(CURL_BIN) -s "$(GITHUB_API_BASE)/releases/latest" 
 GITHUB_COMMITS   := $(shell $(CURL_BIN) -sI "$(GITHUB_API_BASE)/commits?sha=$(REPO_BRANCH)&per_page=1" 2>/dev/null | grep -i "link:" | sed -n 's/.*page=\([0-9]*\)>; rel="last".*/\1/p')
 LOCAL_COUNT     := $(if $(GITHUB_COMMITS),$(GITHUB_COMMITS),$(git_commit_count))
 KSU_VERSION     := $(if $(LOCAL_COUNT),$(shell expr $(VERSION_BASE) + $(LOCAL_COUNT) - $(VERSION_OFFSET)),13000)
-VERSION_TAG     := $(or $(KSU_GITHUB_VER),$(git_latest_tag),4.2.0)
-KSU_VERSION_FULL := $(if $(call git_short_sha),v$(VERSION_TAG)-$(call git_short_sha)@$(call git_branch),v$(VERSION_TAG)-$(REPO_NAME)-unknown@unknown)
-$(info -- $(REPO_NAME) version: $(KSU_VERSION) [$(KSU_VERSION_FULL)])
+# 展示用的产品名与版本号。KSU_VERSION_FULL 只由 supercall 拷给用户态显示，
+# 不参与任何校验，可以随便改；KSU_VERSION（上一个变量）才是版本匹配的依据。
+PRODUCT_NAME := $(if $(KSU_PRODUCT_NAME),$(KSU_PRODUCT_NAME),FurryRoot)
+# 版本号：外部指定 > 本仓库 tag > 上游 releases > 4.2.0。
+# CI 的 checkout 是浅克隆，拿不到 tag，会退到上游 tag；想显示自己的版本
+# 就传 KSU_VERSION_TAG，或给仓库打 tag 并把 checkout 改成 fetch-depth: 0
+VERSION_TAG  := $(or $(KSU_VERSION_TAG),$(git_latest_tag),$(KSU_GITHUB_VER),4.2.0)
+
+KSU_VERSION_FULL := $(if $(call git_short_sha),$(PRODUCT_NAME)-v$(VERSION_TAG)-$(call git_short_sha)@$(call git_branch),$(PRODUCT_NAME)-v$(VERSION_TAG)-unknown@unknown)
+$(info -- $(PRODUCT_NAME) version: $(KSU_VERSION) [$(KSU_VERSION_FULL)])
 
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 ccflags-y += -DKSU_VERSION_FULL=\"$(KSU_VERSION_FULL)\"
