@@ -91,15 +91,18 @@ class SettingsRepositoryImpl : SettingsRepository {
         set(value) = prefs.edit { putInt("pager_interception_mode", value.coerceIn(0, 2)) }
 
     override var enableBlur: Boolean
-        get() = prefs.getBoolean("enable_blur", false)
+        // 模糊效果永久关闭：顶栏/底栏的模糊会糊掉内容且耗电，读取时一律返回 false，
+        // 存储里就算存了 true 也不生效。液态玻璃（floating bottom bar blur）是独立
+        // 开关，不受这里影响。
+        get() = false
         set(value) = prefs.edit { putBoolean("enable_blur", value) }
 
     override var enableFloatingBottomBar: Boolean
-        get() = prefs.getBoolean("enable_floating_bottom_bar", false)
+        get() = prefs.getBoolean("enable_floating_bottom_bar", true)
         set(value) = prefs.edit { putBoolean("enable_floating_bottom_bar", value) }
 
     override var enableFloatingBottomBarBlur: Boolean
-        get() = prefs.getBoolean("enable_floating_bottom_bar_blur", false)
+        get() = prefs.getBoolean("enable_floating_bottom_bar_blur", true)
         set(value) = prefs.edit { putBoolean("enable_floating_bottom_bar_blur", value) }
 
     override var enableNavigationBadge: Boolean
