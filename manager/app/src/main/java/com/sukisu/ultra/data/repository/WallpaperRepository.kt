@@ -49,6 +49,23 @@ object WallpaperRepository {
         _currentId.value = id
     }
 
+    /** 卡片底色不透明度：壁纸模式下卡片太实会挡住背景，让用户自己调。 */
+    private const val KEY_CARD_ALPHA = "wallpaper_card_alpha"
+    const val CARD_ALPHA_MIN = 0.3f
+    const val CARD_ALPHA_MAX = 1f
+    const val CARD_ALPHA_DEFAULT = 0.75f
+
+    private val _cardAlpha = MutableStateFlow(
+        prefs.getFloat(KEY_CARD_ALPHA, CARD_ALPHA_DEFAULT).coerceIn(CARD_ALPHA_MIN, CARD_ALPHA_MAX)
+    )
+    val cardAlpha: StateFlow<Float> = _cardAlpha.asStateFlow()
+
+    fun setCardAlpha(value: Float) {
+        val clamped = value.coerceIn(CARD_ALPHA_MIN, CARD_ALPHA_MAX)
+        prefs.edit().putFloat(KEY_CARD_ALPHA, clamped).apply()
+        _cardAlpha.value = clamped
+    }
+
     /** 拉取图库索引。 */
     suspend fun fetchList(): Result<List<Wallpaper>> = withContext(Dispatchers.IO) {
         runCatching {

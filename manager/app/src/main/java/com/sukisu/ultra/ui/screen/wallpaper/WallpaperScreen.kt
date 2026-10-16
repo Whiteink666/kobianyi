@@ -29,6 +29,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +56,7 @@ import com.sukisu.ultra.data.repository.WallpaperRepository
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.LocalUiMode
 import com.sukisu.ultra.ui.UiMode
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -124,6 +127,32 @@ fun WallpaperScreen() {
             IconButton(onClick = { refresh() }) {
                 Icon(Icons.Filled.Refresh, contentDescription = stringResource(id = R.string.wallpaper_refresh), tint = contentColor)
             }
+        }
+
+        val cardAlpha by WallpaperRepository.cardAlpha.collectAsStateWithLifecycle()
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(id = R.string.wallpaper_card_alpha),
+                    color = contentColor,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "${(cardAlpha * 100).roundToInt()}%",
+                    color = contentColor,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Slider(
+                value = cardAlpha,
+                onValueChange = { WallpaperRepository.setCardAlpha(it) },
+                valueRange = WallpaperRepository.CARD_ALPHA_MIN..WallpaperRepository.CARD_ALPHA_MAX,
+                colors = SliderDefaults.colors(
+                    thumbColor = primaryColor,
+                    activeTrackColor = primaryColor,
+                ),
+            )
         }
 
         when {

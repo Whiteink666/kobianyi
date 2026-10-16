@@ -23,27 +23,37 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun WallpaperAwareSurface(content: @Composable () -> Unit) {
     val wallpaperId by WallpaperRepository.currentId.collectAsStateWithLifecycle()
+    val cardAlpha by WallpaperRepository.cardAlpha.collectAsStateWithLifecycle()
     if (wallpaperId.isBlank()) {
         content()
         return
     }
     when (LocalUiMode.current) {
-        UiMode.Miuix -> MiuixTheme(
-            colors = MiuixTheme.colorScheme.copy(
-                background = Color.Transparent,
-                surface = Color.Transparent,
-            )
-        ) { content() }
+        UiMode.Miuix -> {
+            val base = MiuixTheme.colorScheme
+            MiuixTheme(
+                colors = base.copy(
+                    background = Color.Transparent,
+                    surface = Color.Transparent,
+                    surfaceContainer = base.surfaceContainer.copy(alpha = cardAlpha),
+                )
+            ) { content() }
+        }
 
-        UiMode.Material -> MaterialTheme(
-            colorScheme = MaterialTheme.colorScheme.copy(
-                background = Color.Transparent,
-                surfaceContainer = Color.Transparent,
-            ),
-            // 保留外层的形状和字体，只换配色
-            shapes = MaterialTheme.shapes,
-            typography = MaterialTheme.typography,
-            content = content
-        )
+        UiMode.Material -> {
+            val base = MaterialTheme.colorScheme
+            MaterialTheme(
+                colorScheme = base.copy(
+                    background = Color.Transparent,
+                    surfaceContainer = base.surfaceContainer.copy(alpha = cardAlpha),
+                    surfaceContainerLow = base.surfaceContainerLow.copy(alpha = cardAlpha),
+                    surfaceVariant = base.surfaceVariant.copy(alpha = cardAlpha),
+                ),
+                // 保留外层的形状和字体，只换配色
+                shapes = MaterialTheme.shapes,
+                typography = MaterialTheme.typography,
+                content = content
+            )
+        }
     }
 }
