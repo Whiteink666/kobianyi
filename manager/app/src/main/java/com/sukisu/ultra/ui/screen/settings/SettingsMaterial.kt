@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.SystemUpdateAlt
+import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material3.Icon
@@ -217,6 +218,25 @@ fun SettingPagerMaterial(
                     }
                 )
             }
+
+            val wallpaperTitle = stringResource(id = R.string.settings_wallpaper)
+            SegmentedColumn(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 13.dp),
+                content = listOf {
+                    SegmentedListItem(
+                        onClick = actions.onOpenWallpaper,
+                        headlineContent = { Text(wallpaperTitle) },
+                        supportingContent = { Text(stringResource(id = R.string.settings_wallpaper_summary)) },
+                        leadingContent = { Icon(Icons.Filled.Wallpaper, wallpaperTitle) },
+                        trailingContent = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                null
+                            )
+                        }
+                    )
+                }
+            )
 
             val kpmTitle = stringResource(id = R.string.kpm_title)
             if (isKpmAvailable) {

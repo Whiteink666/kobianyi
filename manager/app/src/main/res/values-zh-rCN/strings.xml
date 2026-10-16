@@ -422,6 +422,15 @@
     <!-- Tools -->
     <string name="settings_tools">工具</string>
     <string name="settings_tools_summary">更多高级功能</string>
+    <string name="settings_wallpaper">背景</string>
+    <string name="settings_wallpaper_summary">从在线图库选择背景</string>
+    <string name="wallpaper_title">背景</string>
+    <string name="wallpaper_default">默认（不启用背景）</string>
+    <string name="wallpaper_empty">图库还没有图片</string>
+    <string name="wallpaper_load_failed">加载图库失败</string>
+    <string name="wallpaper_download_failed">下载失败</string>
+    <string name="wallpaper_applied">已应用背景</string>
+    <string name="wallpaper_refresh">刷新</string>
     <string name="tools_selinux_toggle">SELinux 模式</string>
     <string name="tools_selinux_summary">当前：%1$s</string>
     <string name="tools_selinux_apply_success">SELinux 已切换为 %1$s</string>

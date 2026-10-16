@@ -199,11 +199,13 @@ class MainActivity : ComponentActivity() {
                             NavSwipeDirection.None
                         }
                         val mainScreenEntry = @Composable {
-                            MainScreen(
-                                initialPage = selectedMainPage,
-                                pagerInterceptionMode = uiState.pagerInterceptionMode,
-                                onPageChanged = viewModel::setSelectedMainPage,
-                            )
+                            com.sukisu.ultra.ui.component.WallpaperAwareSurface {
+                                MainScreen(
+                                    initialPage = selectedMainPage,
+                                    pagerInterceptionMode = uiState.pagerInterceptionMode,
+                                    onPageChanged = viewModel::setSelectedMainPage,
+                                )
+                            }
                         }
 
                         val navDisplay = @Composable {
@@ -255,6 +257,7 @@ class MainActivity : ComponentActivity() {
                                     entry<Route.Kpm>(swipeDismiss = swipeDismiss)  { KpmScreen() }
                                     entry<Route.SuSFS>(swipeDismiss = swipeDismiss)  { SuSFSScreen() }
                                     entry<Route.Tool>(swipeDismiss = swipeDismiss)  { ToolsScreen() }
+                                    entry<Route.Wallpaper>(swipeDismiss = swipeDismiss)  { com.sukisu.ultra.ui.screen.wallpaper.WallpaperScreen() }
                                     entry<Route.UmountManager>(swipeDismiss = swipeDismiss)  { UmountManagerScreen() }
                                     entry<Route.ModuleConfig>(swipeDismiss = swipeDismiss) { key ->
                                         com.sukisu.ultra.ui.screen.moduleconfig.ModuleConfigScreen(key.moduleId)
@@ -265,9 +268,9 @@ class MainActivity : ComponentActivity() {
                         when (uiMode) {
                             UiMode.Material -> androidx.compose.material3.Scaffold(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            ) { navDisplay() }
+                            ) { com.sukisu.ultra.ui.component.WallpaperBackdrop { navDisplay() } }
 
-                            UiMode.Miuix -> Scaffold { navDisplay() }
+                            UiMode.Miuix -> Scaffold { com.sukisu.ultra.ui.component.WallpaperBackdrop { navDisplay() } }
                         }
                         SideEffect { contentReady = true }
                     }

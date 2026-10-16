@@ -30,6 +30,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LayersClear
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Settings
@@ -263,6 +264,29 @@ fun SettingPagerMiuix(
                                 }
                             )
                         }
+                    }
+
+                    val wallpaperTitle = stringResource(id = R.string.settings_wallpaper)
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth()
+                    ) {
+                        ArrowPreference(
+                            title = wallpaperTitle,
+                            summary = stringResource(id = R.string.settings_wallpaper_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Wallpaper,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = wallpaperTitle,
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            onClick = {
+                                actions.onOpenWallpaper()
+                            }
+                        )
                     }
 
                     if (isKpmAvailable) {

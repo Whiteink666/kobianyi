@@ -104,6 +104,10 @@ sealed interface Route : NavKey, Parcelable {
 
     @Parcelize
     @Serializable
+    data object Wallpaper: Route
+
+    @Parcelize
+    @Serializable
     data object UmountManager: Route
 
     @Parcelize

@@ -436,6 +436,15 @@
     <!-- Tools -->
     <string name="settings_tools">Tools</string>
     <string name="settings_tools_summary">More advanced features.</string>
+    <string name="settings_wallpaper">Background</string>
+    <string name="settings_wallpaper_summary">Pick a background from the online gallery</string>
+    <string name="wallpaper_title">Background</string>
+    <string name="wallpaper_default">Default (no background)</string>
+    <string name="wallpaper_empty">The gallery is empty</string>
+    <string name="wallpaper_load_failed">Failed to load the gallery</string>
+    <string name="wallpaper_download_failed">Download failed</string>
+    <string name="wallpaper_applied">Background applied</string>
+    <string name="wallpaper_refresh">Refresh</string>
     <string name="tools_selinux_toggle">SELinux mode</string>
     <string name="tools_selinux_summary">Current: %1$s</string>
     <string name="tools_selinux_apply_success">SELinux switched to %1$s</string>
