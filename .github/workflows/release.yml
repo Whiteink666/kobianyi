@@ -93,7 +93,9 @@ jobs:
       - name: release
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          # 用 GitHub 自带的 GITHUB_TOKEN：本文件顶部已声明 contents: write，
+          # 不需要额外配置 GH_TOKEN（配了反而会因为没配而发布失败）
+          token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             manager/*.apk
             lkm/lkm-*_kernelsu.ko

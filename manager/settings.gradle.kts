@@ -2,11 +2,10 @@
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-// 注意：不要在这里加国内镜像。镜像若代理了某个库的 POM 却没有对应的
-// AAR，Gradle 会认定该仓库为唯一来源并直接失败（CI 上 libsu 就是这么挂的）。
-// 国内网络加速请放到 ~/.gradle/init.d/ 里，只影响本地，不进仓库。
 pluginManagement {
     repositories {
+        maven("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/")
+        maven("https://mirrors.cloud.tencent.com/nexus/repository/gradle-plugin/")
         gradlePluginPortal()
         google()
         mavenCentral()
@@ -15,9 +14,17 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
+        // 腾讯镜像加速。坑：镜像代理了 libsu 的 POM 却没有对应的 AAR，
+        // Gradle 一旦在某仓库拿到元数据就只认这一处，找不到 AAR 直接失败
+        // （CI 上就是这么挂的）。所以把 libsu 所在的 group 排除掉，让它走 jitpack。
+        maven("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/") {
+            content {
+                excludeGroup("com.github.topjohnwu")
+            }
+        }
+        maven("https://jitpack.io")
         google()
         mavenCentral()
-        maven("https://jitpack.io")
     }
 }
 
