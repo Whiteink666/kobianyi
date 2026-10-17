@@ -69,6 +69,14 @@ add_custom_command(
 )
 add_custom_target(dfroot_splicehelper DEPENDS "${DF_STAGE}/splicehelper")
 
+# ko/splicehelper 都要在编译前躺进 stage 目录，.configure 阶段复制不一定生效
+# （CI 上 ko 是在 configure 之后才下载到位的），所以放到构建期同步
+add_custom_target(dfroot_stage_sync
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${DF_STAGE}/ko"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory "${DF_DIR}/ko" "${DF_STAGE}/ko"
+)
+add_dependencies(dfroot_splicehelper dfroot_stage_sync)
+
 add_executable(dfroot exp.c elf_parser.c libcxx.S)
 add_dependencies(dfroot dfroot_splicehelper)
 set_target_properties(dfroot PROPERTIES
