@@ -589,11 +589,10 @@ suspend fun getDefaultPartition(): String = withContext(Dispatchers.IO) {
         val partition = ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} $cmd").trim()
         if (partition.isNotBlank()) return@withContext partition
     }
-    // No root yet (or ksud unavailable): decide from the partitions that actually
-    // exist instead of hardcoding init_boot, which broke devices without one.
-    val partitions = probeBootPartitions(shell)
-    val legacyGki = Os.uname().release.contains("android12-")
-    if (!legacyGki && "init_boot" in partitions) "init_boot" else "boot"
+    // 与上游一致：按内核 KMI 判断。init_boot 分区自 Android 13 引入，
+    // android12- 及更早的 GKI 内核没有它；uname 无需 root 即可读取。
+    val release = Os.uname().release
+    if (release.contains("android12-")) "boot" else "init_boot"
 }
 
 suspend fun getSlotSuffix(ota: Boolean): String = withContext(Dispatchers.IO) {
