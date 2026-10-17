@@ -21,6 +21,9 @@ endif()
 
 set(DF_DIR   ${CMAKE_CURRENT_SOURCE_DIR})
 set(DF_STAGE ${CMAKE_CURRENT_BINARY_DIR}/stage)
+# ninja 的工作目录（顶层 build 目录）。把 ko / splicehelper 也放一份到这里，
+# .incbin 按当前目录搜索时就能命中，不只依赖 -I。
+set(DF_CWD   ${CMAKE_BINARY_DIR})
 
 # dfroot.ko is a kernel module and cannot be built by the NDK. It is compiled per KMI
 # in CI (see .github/workflows) and dropped into cpp/dfroot/ko/. Missing modules fall
@@ -64,6 +67,8 @@ add_custom_command(
             -o "${DF_STAGE}/splicehelper"
             -nodefaultlibs -nostartfiles -ffreestanding -static
     COMMAND "${CMAKE_STRIP}" "${DF_STAGE}/splicehelper"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DF_STAGE}/splicehelper" "${DF_CWD}/splicehelper"
     DEPENDS "${DF_DIR}/splicehelper.c"
     COMMENT "Building splicehelper"
 )
@@ -74,6 +79,8 @@ add_custom_target(dfroot_splicehelper DEPENDS "${DF_STAGE}/splicehelper")
 add_custom_target(dfroot_stage_sync
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${DF_STAGE}/ko"
     COMMAND "${CMAKE_COMMAND}" -E copy_directory "${DF_DIR}/ko" "${DF_STAGE}/ko"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${DF_CWD}/ko"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory "${DF_DIR}/ko" "${DF_CWD}/ko"
 )
 add_dependencies(dfroot_splicehelper dfroot_stage_sync)
 
