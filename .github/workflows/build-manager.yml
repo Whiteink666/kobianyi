@@ -352,6 +352,11 @@ jobs:
           merge-multiple: true
           path: manager/app/src/main/cpp/dfroot/ko
 
+      - name: Debug dfroot ko
+        run: |
+          echo "pwd: $(pwd)"
+          ls -l manager/app/src/main/cpp/dfroot/ko || echo "ko dir missing"
+
 
       # --------------------------------------------------------
       # Copy ksud into Manager
@@ -519,6 +524,11 @@ jobs:
           pattern: dfroot-*-ko
           merge-multiple: true
           path: manager/app/src/main/cpp/dfroot/ko
+
+      - name: Debug dfroot ko
+        run: |
+          echo "pwd: $(pwd)"
+          ls -l manager/app/src/main/cpp/dfroot/ko || echo "ko dir missing"
 
 
       # --------------------------------------------------------
