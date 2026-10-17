@@ -41,9 +41,13 @@ object DirtyFragRunner {
     private const val KSUD_LIB = "libksud.so"
     private const val BOOTSTRAP_LIB = "libbootstrap.so"
 
-    private const val RC_OK = 0
-    private const val RC_KSUD_FAILED = 1
-    private const val RC_FAILED = 2
+    const val RC_OK = 0
+    const val RC_KSUD_FAILED = 1
+    const val RC_FAILED = 2
+    /** 内核已修复 CVE-2026-43284，本机用不了 DirtyFrag */
+    const val RC_NOT_VULNERABLE = 3
+
+    private const val NOT_VULNERABLE_MARKER = "DEVICE NOT VULNERABLE"
 
     fun isArchSupported(): Boolean = Build.SUPPORTED_ABIS.any { it == "arm64-v8a" }
 
@@ -111,8 +115,18 @@ object DirtyFragRunner {
             .setIpv4Encapsulation(encapSock, senderPort)
             .buildTransportModeTransform(loopback, spiObj)
 
+        val log = StringBuilder()
         try {
-            execExploit(encapSock.port, spiObj.spi, aesKey, senderPort, onLog)
+            val rc = execExploit(encapSock.port, spiObj.spi, aesKey, senderPort) { line ->
+                log.append(line)
+                onLog(line)
+            }
+            when {
+                rc == RC_OK -> RC_OK
+                log.contains(NOT_VULNERABLE_MARKER, ignoreCase = true) -> RC_NOT_VULNERABLE
+                rc == RC_KSUD_FAILED -> RC_KSUD_FAILED
+                else -> RC_FAILED
+            }
         } finally {
             runCatching { transform.close() }
             runCatching { spiObj.close() }

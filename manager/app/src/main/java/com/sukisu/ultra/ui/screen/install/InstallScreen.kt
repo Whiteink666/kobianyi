@@ -437,7 +437,12 @@ fun InstallScreen(
                     dirtyFragRunning = false
                     showMessage(
                         context.getString(
-                            if (rc == 0) R.string.dirtyfrag_success else R.string.dirtyfrag_failed
+                            when (rc) {
+                                DirtyFragRunner.RC_OK -> R.string.dirtyfrag_success
+                                DirtyFragRunner.RC_NOT_VULNERABLE -> R.string.dirtyfrag_not_vulnerable
+                                DirtyFragRunner.RC_KSUD_FAILED -> R.string.dirtyfrag_ksud_failed
+                                else -> R.string.dirtyfrag_failed
+                            }
                         )
                     )
                 }

@@ -705,5 +705,7 @@
     <string name="dirtyfrag_running">Running…</string>
     <string name="dirtyfrag_success">DirtyFrag Root: success</string>
     <string name="dirtyfrag_failed">DirtyFrag Root: failed, check the log</string>
+    <string name="dirtyfrag_not_vulnerable">This kernel already fixes CVE-2026-43284, DirtyFrag Root cannot be used here</string>
+    <string name="dirtyfrag_ksud_failed">DirtyFrag Root: root was obtained but ksud failed to start</string>
 
 </resources>

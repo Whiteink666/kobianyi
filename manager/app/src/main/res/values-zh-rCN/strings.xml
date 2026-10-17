@@ -690,5 +690,7 @@
     <string name="dirtyfrag_running">正在运行…</string>
     <string name="dirtyfrag_success">DirtyFrag Root：成功</string>
     <string name="dirtyfrag_failed">DirtyFrag Root：失败，请查看日志</string>
+    <string name="dirtyfrag_not_vulnerable">当前内核已修复 CVE-2026-43284，这台设备无法使用 DirtyFrag Root</string>
+    <string name="dirtyfrag_ksud_failed">DirtyFrag Root：已拿到 root，但 ksud 启动失败</string>
 
 </resources>
