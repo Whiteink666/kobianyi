@@ -27,9 +27,15 @@ object WallpaperRepository {
     private const val PREFS = "settings"
     private const val KEY_CURRENT = "wallpaper_id"
 
-    private const val BASE_URL =
-        "https://raw.githubusercontent.com/Whiteink666/Whiteink-Manager/main/wallpapers/"
-    private const val INDEX_URL = "${BASE_URL}index.json"
+    // 图库源，按顺序回退：
+    // 1) raw 是实时的，改完索引立刻生效，但国内（尤其手机直连）常连不上
+    // 2) gh-proxy 是实时代理，国内可用，用来兜底
+    // 3) jsDelivr 的 CDN 国内稳定，但缓存约 12 小时，加了新图要等半天，放最后
+    private val SOURCES = listOf(
+        "https://raw.githubusercontent.com/Whiteink666/Whiteink-Manager/main/wallpapers/",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/Whiteink666/Whiteink-Manager/main/wallpapers/",
+        "https://cdn.jsdelivr.net/gh/Whiteink666/Whiteink-Manager@main/wallpapers/",
+    )
 
     private val prefs by lazy {
         ksuApp.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -69,29 +75,42 @@ object WallpaperRepository {
     /** 拉取图库索引。 */
     suspend fun fetchList(): Result<List<Wallpaper>> = withContext(Dispatchers.IO) {
         runCatching {
-            ksuApp.okhttpClient.newCall(Request.Builder().url(INDEX_URL).build())
-                .execute().use { resp ->
-                    if (!resp.isSuccessful) error("HTTP ${resp.code}")
-                    val body = resp.body.string()
-                    val arr = JSONObject(body).optJSONArray("wallpapers")
-                        ?: return@runCatching emptyList()
-                    (0 until arr.length()).mapNotNull { i ->
-                        val o = arr.optJSONObject(i) ?: return@mapNotNull null
-                        val id = o.optString("id").trim()
-                        val file = o.optString("file").trim()
-                        // id 会当作本地缓存文件名，挡掉路径穿越
-                        if (id.isEmpty() || file.isEmpty()) return@mapNotNull null
-                        if (id.any { it == '/' || it == '\\' || it == '.' }) return@mapNotNull null
-                        Wallpaper(
-                            id = id,
-                            name = o.optString("name").ifBlank { id },
-                            url = if (file.startsWith("http")) file else BASE_URL + file,
-                            author = o.optString("author", ""),
-                            source = o.optString("source", ""),
-                        )
-                    }
+            var lastError: Throwable? = null
+            for (base in SOURCES) {
+                try {
+                    return@runCatching fetchFrom(base)
+                } catch (e: Exception) {
+                    lastError = e
+                    Log.w(TAG, "wallpaper source unavailable: $base", e)
                 }
+            }
+            throw lastError ?: IllegalStateException("no wallpaper source")
         }.onFailure { Log.w(TAG, "fetch wallpaper list failed", it) }
+    }
+
+    /** 从一个源拉索引；图片地址也用同一个源拼，避免两个源混用。 */
+    private fun fetchFrom(base: String): List<Wallpaper> {
+        ksuApp.okhttpClient.newCall(Request.Builder().url(base + "index.json").build())
+            .execute().use { resp ->
+                if (!resp.isSuccessful) error("HTTP ${resp.code}")
+                val arr = JSONObject(resp.body.string()).optJSONArray("wallpapers")
+                    ?: return emptyList()
+                return (0 until arr.length()).mapNotNull { i ->
+                    val o = arr.optJSONObject(i) ?: return@mapNotNull null
+                    val id = o.optString("id").trim()
+                    val file = o.optString("file").trim()
+                    // id 会当作本地缓存文件名，挡掉路径穿越
+                    if (id.isEmpty() || file.isEmpty()) return@mapNotNull null
+                    if (id.any { it == '/' || it == '\\' || it == '.' }) return@mapNotNull null
+                    Wallpaper(
+                        id = id,
+                        name = o.optString("name").ifBlank { id },
+                        url = if (file.startsWith("http")) file else base + file,
+                        author = o.optString("author", ""),
+                        source = o.optString("source", ""),
+                    )
+                }
+            }
     }
 
     /** 下载一张壁纸到本地缓存。 */
