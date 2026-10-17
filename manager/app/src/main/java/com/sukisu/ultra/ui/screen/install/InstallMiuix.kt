@@ -453,6 +453,7 @@ private fun SelectInstallMethod(
             is InstallMethod.DownloadFile -> onDownloadFile()
             is InstallMethod.DirectInstall -> onSelected(option)
             is InstallMethod.DirectInstallToInactiveSlot -> confirmDialog.showConfirm(dialogTitle, dialogContent)
+            is InstallMethod.DirtyFragRoot -> onSelected(option)
         }
     }
 

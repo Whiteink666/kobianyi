@@ -101,6 +101,29 @@ jobs:
         llvm-strip -d "$OUT_DIR/$OUTPUT_NAME"
         echo "Size after stripping: $(du -h "$OUT_DIR/$OUTPUT_NAME" | cut -f1)"
 
+    - name: Build dfroot.ko (DirtyFrag Root)
+      run: |
+        echo "=== Building dfroot.ko for KMI: ${{ inputs.kmi }} ==="
+        cd manager/app/src/main/cpp/dfroot/lkm
+        make DF_PACKAGE=com.whiteink.furryroot
+        # 这个 ko 要靠漏洞一页一页写进页缓存，越小越好
+        llvm-objcopy --strip-unneeded \
+          -R .comment -R .note.gnu.property \
+          -R .note.Linux -R .note.GNU-stack \
+          -R .BTF -R .BTF.base -R .llvm_addrsig \
+          -R .hyp.text -R .hyp.bss -R .hyp.rodata -R .hyp.event_ids \
+          -R .hyp.patchable_function_entries -R .hyp.data dfroot.ko
+        OUT_DIR=/github/workspace/out/dfroot
+        mkdir -p $OUT_DIR
+        cp dfroot.ko "$OUT_DIR/dfroot-${{ inputs.kmi }}.ko"
+        echo "Size: $(du -h "$OUT_DIR/dfroot-${{ inputs.kmi }}.ko" | cut -f1)"
+
+    - name: Upload dfroot.ko artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: dfroot-${{ inputs.kmi }}-ko
+        path: /github/workspace/out/dfroot/dfroot-${{ inputs.kmi }}.ko
+
     - name: Upload kernelsu.ko artifact
       uses: actions/upload-artifact@v7
       with:

@@ -699,4 +699,11 @@
     <string name="home_zygisk_not_installed">Not installed</string>
     <string name="home_zygisk_disabled">Disabled</string>
     <string name="home_zygisk_reboot_required">Reboot required</string>
+    <!-- DirtyFrag Root: temporary root via CVE-2026-43284, no bootloader unlock -->
+    <string name="dirtyfrag_root">DirtyFrag Root</string>
+    <string name="dirtyfrag_summary">Temporary root without unlocking the bootloader. Lost on reboot.</string>
+    <string name="dirtyfrag_running">Running…</string>
+    <string name="dirtyfrag_success">DirtyFrag Root: success</string>
+    <string name="dirtyfrag_failed">DirtyFrag Root: failed, check the log</string>
+
 </resources>

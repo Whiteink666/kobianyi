@@ -42,8 +42,19 @@ import com.sukisu.ultra.ui.util.getDefaultPartition
 import com.sukisu.ultra.ui.util.getSlotSuffix
 import com.sukisu.ultra.ui.util.isAbDevice
 import android.net.Uri
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalResources
 import com.sukisu.ultra.ui.component.dialog.DownloadDialog
 import com.sukisu.ultra.ui.util.*
@@ -82,6 +93,10 @@ fun InstallScreen(
     var bootImageKind by rememberSaveable { mutableIntStateOf(-1) }
     var inspectJob by remember { mutableStateOf<Job?>(null) }
 
+    // DirtyFrag Root（临时 root）的运行日志，null 表示没在跑
+    var dirtyFragLog by remember { mutableStateOf<String?>(null) }
+    var dirtyFragRunning by remember { mutableStateOf(false) }
+
     // Read the configuration from the boot image ksu_config
     val bootConfig by produceState(initialValue = BootConfig()) { value = getBootConfig() }
     var spoofRelease by rememberSaveable { mutableStateOf(SuSFSManager.getKernelSpoofRelease()) }
@@ -113,6 +128,10 @@ fun InstallScreen(
                 add(InstallMethod.DirectInstall)
                 if (isAbDevice) add(InstallMethod.DirectInstallToInactiveSlot)
                 add(InstallMethod.HorizonKernel(summary = horizonKernelSummary))
+            }
+            // 已经有 root 就不需要临时 root 了
+            if (DirtyFragRunner.isAvailable() && !rootAvailable) {
+                add(InstallMethod.DirtyFragRoot)
             }
         }
     }
@@ -407,6 +426,23 @@ fun InstallScreen(
             }
         },
         onNext = {
+            if (installMethod is InstallMethod.DirtyFragRoot) {
+                if (dirtyFragRunning) return@InstallScreenActions
+                dirtyFragLog = ""
+                dirtyFragRunning = true
+                scope.launch {
+                    val rc = DirtyFragRunner.run { line ->
+                        dirtyFragLog = (dirtyFragLog ?: "") + line
+                    }
+                    dirtyFragRunning = false
+                    showMessage(
+                        context.getString(
+                            if (rc == 0) R.string.dirtyfrag_success else R.string.dirtyfrag_failed
+                        )
+                    )
+                }
+                return@InstallScreenActions
+            }
             val isLkmSelected = lkmSelection != LkmSelection.KmiNone
             val isKmiUnknown = currentKmi.isBlank()
             val isKmiUnresolved = when (installMethod) {
@@ -464,6 +500,33 @@ fun InstallScreen(
             anyKernel3State.onReopenKpmDialog(method)
         }
     )
+
+    val dfLog = dirtyFragLog
+    if (dfLog != null) {
+        AlertDialog(
+            onDismissRequest = { if (!dirtyFragRunning) dirtyFragLog = null },
+            title = { Text(stringResource(R.string.dirtyfrag_root)) },
+            text = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 320.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = dfLog.ifBlank { stringResource(R.string.dirtyfrag_running) },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { dirtyFragLog = null },
+                    enabled = !dirtyFragRunning
+                ) { Text(stringResource(android.R.string.ok)) }
+            }
+        )
+    }
 
     when (LocalUiMode.current) {
         UiMode.Miuix -> InstallScreenMiuix(state, actions, miuixSnackbarHost)

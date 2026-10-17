@@ -8,3 +8,6 @@ __pycache__
 /dist
 /repack-config.json
 /userspace/ksud/.lkm_image_bootstrap.o
+
+# DirtyFrag: 内核模块按 KMI 由 CI 预编译，产物不入库
+/manager/app/src/main/cpp/dfroot/ko/

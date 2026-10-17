@@ -170,6 +170,7 @@ android {
 
         externalNativeBuild {
             cmake {
+                arguments += "-DDF_PACKAGE=$managerPackageName"
                 arguments += "-DANDROID_STL=none"
                 cFlags += baseCFlags + "-std=c2x"
                 cppFlags += baseCppFlags + "-std=c++2b"

@@ -35,6 +35,12 @@ sealed class InstallMethod : Parcelable {
             get() = R.string.install_inactive_slot
     }
 
+    /** 临时 root（DirtyFrag / CVE-2026-43284），不刷写任何分区、重启即失效 */
+    data object DirtyFragRoot : InstallMethod() {
+        override val label: Int
+            get() = R.string.dirtyfrag_root
+    }
+
     data class HorizonKernel(
         val uri: Uri? = null,
         val slot: String? = null,

@@ -24,3 +24,6 @@ target_link_libraries(kernelsu ${log-lib})
 
 add_library(adbroot SHARED adbroot.cc)
 target_link_libraries(adbroot ${log-lib})
+
+# DirtyFrag Root (temporary root, no bootloader unlock). arm64 only.
+add_subdirectory(dfroot)

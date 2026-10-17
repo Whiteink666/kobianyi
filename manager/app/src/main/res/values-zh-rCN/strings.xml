@@ -684,4 +684,11 @@
     <string name="home_zygisk_not_installed">未安装</string>
     <string name="home_zygisk_disabled">已禁用</string>
     <string name="home_zygisk_reboot_required">需要重启</string>
+    <!-- DirtyFrag Root：基于 CVE-2026-43284 的临时 root，无需解锁 bootloader -->
+    <string name="dirtyfrag_root">DirtyFrag Root</string>
+    <string name="dirtyfrag_summary">无需解锁 bootloader 的临时 root，重启后失效</string>
+    <string name="dirtyfrag_running">正在运行…</string>
+    <string name="dirtyfrag_success">DirtyFrag Root：成功</string>
+    <string name="dirtyfrag_failed">DirtyFrag Root：失败，请查看日志</string>
+
 </resources>

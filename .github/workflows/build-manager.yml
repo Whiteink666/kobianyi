@@ -344,6 +344,15 @@ jobs:
           path: artifacts/ksud-x86_64-linux-android
 
 
+      - name: Download dfroot.ko (DirtyFrag Root)
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          pattern: dfroot-*-ko
+          merge-multiple: true
+          path: app/src/main/cpp/dfroot/ko
+
+
       # --------------------------------------------------------
       # Copy ksud into Manager
       # --------------------------------------------------------
@@ -501,6 +510,15 @@ jobs:
         with:
           name: ksud-x86_64-linux-android
           path: artifacts/ksud-x86_64-linux-android
+
+
+      - name: Download dfroot.ko (DirtyFrag Root)
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          pattern: dfroot-*-ko
+          merge-multiple: true
+          path: app/src/main/cpp/dfroot/ko
 
 
       # --------------------------------------------------------
