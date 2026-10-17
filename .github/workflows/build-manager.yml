@@ -350,7 +350,7 @@ jobs:
         with:
           pattern: dfroot-*-ko
           merge-multiple: true
-          path: app/src/main/cpp/dfroot/ko
+          path: manager/app/src/main/cpp/dfroot/ko
 
 
       # --------------------------------------------------------
@@ -518,7 +518,7 @@ jobs:
         with:
           pattern: dfroot-*-ko
           merge-multiple: true
-          path: app/src/main/cpp/dfroot/ko
+          path: manager/app/src/main/cpp/dfroot/ko
 
 
       # --------------------------------------------------------
