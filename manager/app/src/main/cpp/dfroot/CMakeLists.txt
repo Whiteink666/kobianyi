@@ -95,7 +95,6 @@ set_target_properties(dfroot PROPERTIES
 target_include_directories(dfroot PRIVATE "${DF_DIR}" "${DF_STAGE}")
 target_compile_options(dfroot PRIVATE
     -std=gnu11
-    -I"${DF_STAGE}"
     -fno-stack-protector
     -fomit-frame-pointer)
 target_compile_definitions(dfroot PRIVATE DF_PACKAGE="${DF_PACKAGE}")
