@@ -58,6 +58,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import com.sukisu.ultra.data.repository.WallpaperRepository
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.ui.component.bottombar.BottomBar
 import com.sukisu.ultra.ui.component.bottombar.MainPagerState
@@ -374,8 +375,11 @@ fun MainScreen(
     }
     val blurBackdrop = rememberBlurBackdrop(enableBlur)
 
+    val wallpaperId by WallpaperRepository.currentId.collectAsStateWithLifecycle()
     val backdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
+        // 有壁纸时不垫底：垫底的 surface 在壁纸模式下是透明的，
+        // 会让玻璃效果对透明像素采样出黑色块
+        if (wallpaperId.isBlank()) drawRect(surfaceColor)
         drawContent()
     }
 

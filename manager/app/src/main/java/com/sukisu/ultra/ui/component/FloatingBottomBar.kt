@@ -28,6 +28,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sukisu.ultra.data.repository.WallpaperRepository
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -217,7 +219,13 @@ fun FloatingBottomBar(
     val accentColor = MiuixTheme.colorScheme.primary
     val tabContentColor = MiuixTheme.colorScheme.onSurface
     val surfaceContainer = MiuixTheme.colorScheme.surfaceContainer
-    val containerColor = if (isBlurEnabled) surfaceContainer.copy(0.4f) else surfaceContainer
+    val wallpaperId by WallpaperRepository.currentId.collectAsStateWithLifecycle()
+    // 有壁纸时玻璃层本身会压暗，容器色再淡一点，避免糊成一块黑
+    val containerColor = when {
+        !isBlurEnabled -> surfaceContainer
+        wallpaperId.isBlank() -> surfaceContainer.copy(0.4f)
+        else -> surfaceContainer.copy(0.22f)
+    }
 
     val tabsBackdrop = rememberLayerBackdrop()
     val density = LocalDensity.current
