@@ -48,10 +48,9 @@ foreach(kmi IN LISTS DF_KMIS)
             message(WARNING "dfroot: no prebuilt ko in ${DF_DIR}/ko, using empty placeholders")
             set(DF_KO_WARNED TRUE)
         endif()
-        set(DF_KO_SRC "${DF_DIR}/ko/.placeholder")
-        if(NOT EXISTS "${DF_KO_SRC}")
-            file(WRITE "${DF_KO_SRC}" "")
-        endif()
+        # 占位文件必须用 ko 的真名：dfroot_stage_sync 是把整个 ko 目录拷到
+        # stage / 编译工作目录的，而 .incbin 是按名字去这两个目录里找的。
+        file(WRITE "${DF_KO_SRC}" "")
     endif()
     configure_file("${DF_KO_SRC}" "${DF_STAGE}/ko/dfroot-${kmi}.ko" COPYONLY)
 endforeach()

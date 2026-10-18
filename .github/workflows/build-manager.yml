@@ -362,10 +362,10 @@ jobs:
         with:
           pattern: dfroot-*-ko
           merge-multiple: true
-          path: app/src/main/cpp/dfroot/ko
+          path: ${{ github.workspace }}/manager/app/src/main/cpp/dfroot/ko
 
       - name: Show dfroot ko
-        run: ls -l app/src/main/cpp/dfroot/ko || echo "no dfroot ko, using placeholders"
+        run: ls -l ${{ github.workspace }}/manager/app/src/main/cpp/dfroot/ko || echo "no dfroot ko, using placeholders"
 
       # --------------------------------------------------------
       # GhostLock extractor (parses boot.img / payload.bin into a profile)
