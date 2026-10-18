@@ -27,3 +27,6 @@ target_link_libraries(adbroot ${log-lib})
 
 # DirtyFrag Root (temporary root, no bootloader unlock). arm64 only.
 add_subdirectory(dfroot)
+
+# GhostLock (temporary root, no bootloader unlock). arm64 only.
+add_subdirectory(ghostlock)

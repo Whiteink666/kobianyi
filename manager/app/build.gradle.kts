@@ -260,6 +260,9 @@ dependencies {
     implementation(libs.commons.compress)
     implementation(libs.xz)
     implementation(libs.protobuf.kotlin.lite)
+
+    // GhostLock: HOCON parser for the bundled kernel profiles
+    implementation("com.typesafe:config:1.4.9")
 }
 
 kotlin {

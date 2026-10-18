@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import com.sukisu.ultra.R
 import com.sukisu.ultra.getKernelVersion
 import com.sukisu.ultra.ui.LocalUiMode
@@ -42,16 +43,7 @@ import com.sukisu.ultra.ui.util.getDefaultPartition
 import com.sukisu.ultra.ui.util.getSlotSuffix
 import com.sukisu.ultra.ui.util.isAbDevice
 import android.net.Uri
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -93,9 +85,11 @@ fun InstallScreen(
     var bootImageKind by rememberSaveable { mutableIntStateOf(-1) }
     var inspectJob by remember { mutableStateOf<Job?>(null) }
 
-    // DirtyFrag Root（临时 root）的运行日志，null 表示没在跑
-    var dirtyFragLog by remember { mutableStateOf<String?>(null) }
-    var dirtyFragRunning by remember { mutableStateOf(false) }
+    // 临时 root（DirtyFrag Root / GhostLock）的运行日志，null 表示没在跑
+    var tempRootLog by remember { mutableStateOf<String?>(null) }
+    var tempRootRunning by remember { mutableStateOf(false) }
+    // 内核已修复漏洞时置位：把原因常驻写在选项 summary 里，别只闪一条提示
+    var dirtyFragNotVulnerable by rememberSaveable { mutableStateOf(false) }
 
     // Read the configuration from the boot image ksu_config
     val bootConfig by produceState(initialValue = BootConfig()) { value = getBootConfig() }
@@ -120,7 +114,15 @@ fun InstallScreen(
     val downloadFileMsg = stringResource(id = R.string.download_dialog_msg)
 
     val horizonKernelSummary = stringResource(R.string.horizon_kernel_summary)
-    val installMethodOptions = remember(rootAvailable, isAbDevice, isGkiDevice, selectFileTip, selectFileTipNoGki, downloadFileMsg, horizonKernelSummary) {
+
+    // 本机内核有没有内置 profile：没有就直接写在选项下面，别等跑完才知道
+    val ghostLockHasProfile by produceState(initialValue = true) {
+        value = GhostLockRunner.hasProfile()
+    }
+    // 没有内置 profile 时可以选一个内核镜像（boot.img / payload.bin）现解析
+    val ghostLockNeedImage = !ghostLockHasProfile && !GhostLockRunner.hasUserProfile()
+
+    val installMethodOptions = remember(rootAvailable, isAbDevice, isGkiDevice, selectFileTip, selectFileTipNoGki, downloadFileMsg, horizonKernelSummary, dirtyFragNotVulnerable, ghostLockHasProfile) {
         buildList {
             add(InstallMethod.SelectFile(summary = if (isGkiDevice) selectFileTip else selectFileTipNoGki))
             add(InstallMethod.DownloadFile(summary = downloadFileMsg))
@@ -131,7 +133,26 @@ fun InstallScreen(
             }
             // 已经有 root 就不需要临时 root 了
             if (DirtyFragRunner.isAvailable() && !rootAvailable) {
-                add(InstallMethod.DirtyFragRoot)
+                add(
+                    InstallMethod.DirtyFragRoot(
+                        summary = if (dirtyFragNotVulnerable) {
+                            context.getString(R.string.dirtyfrag_not_vulnerable)
+                        } else {
+                            null
+                        }
+                    )
+                )
+            }
+            if (GhostLockRunner.isAvailable() && !rootAvailable) {
+                add(
+                    InstallMethod.GhostLock(
+                        summary = if (!ghostLockHasProfile) {
+                            context.getString(R.string.ghostlock_no_profile, GhostLockRunner.kernelRelease())
+                        } else {
+                            null
+                        }
+                    )
+                )
             }
         }
     }
@@ -323,6 +344,68 @@ fun InstallScreen(
             }
         }
     }
+    // GhostLock 执行入口：parseUri 非空时先用 extractor 从镜像算出 offset，再跑利用
+    fun runGhostLock(parseUri: Uri? = null) {
+        if (tempRootRunning) return
+        tempRootLog = ""
+        tempRootRunning = true
+        scope.launch {
+            var rc = GhostLockRunner.RC_FAILED
+            if (parseUri != null) {
+                val input = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val dest = File(context.cacheDir, "ghostlock_kernel.img")
+                        context.contentResolver.openInputStream(parseUri)?.use { src ->
+                            dest.outputStream().use { src.copyTo(it) }
+                        }
+                        dest
+                    }.getOrNull()
+                }
+                if (input == null) {
+                    tempRootLog = (tempRootLog ?: "") + "cannot read the selected image\n"
+                } else {
+                    tempRootLog = (tempRootLog ?: "") + "* parsing kernel image...\n"
+                    val parsed = GhostLockRunner.parseProfile(input) { line ->
+                        tempRootLog = (tempRootLog ?: "") + line
+                    }
+                    if (!parsed) {
+                        tempRootRunning = false
+                        showMessage(context.getString(R.string.ghostlock_parse_failed))
+                        return@launch
+                    }
+                }
+            }
+            rc = GhostLockRunner.run { line ->
+                tempRootLog = (tempRootLog ?: "") + line
+            }
+            tempRootRunning = false
+            // 成功就收掉弹窗；失败留着日志给人看
+            if (rc == GhostLockRunner.RC_OK) {
+                tempRootLog = null
+            }
+            showMessage(
+                context.getString(
+                    when (rc) {
+                        GhostLockRunner.RC_OK -> R.string.ghostlock_success
+                        else -> R.string.ghostlock_failed
+                    }
+                )
+            )
+        }
+    }
+
+    // GhostLock：没有内置 profile 时用它挑一个内核镜像（boot.img / payload.bin）
+    // 交给 libextract.so 现算出 offset
+    val ghostLockImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            it.data?.data?.let { uri ->
+                runGhostLock(parseUri = uri)
+            }
+        }
+    }
+
     val selectImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
@@ -427,14 +510,22 @@ fun InstallScreen(
         },
         onNext = {
             if (installMethod is InstallMethod.DirtyFragRoot) {
-                if (dirtyFragRunning) return@InstallScreenActions
-                dirtyFragLog = ""
-                dirtyFragRunning = true
+                if (tempRootRunning) return@InstallScreenActions
+                tempRootLog = ""
+                tempRootRunning = true
                 scope.launch {
                     val rc = DirtyFragRunner.run { line ->
-                        dirtyFragLog = (dirtyFragLog ?: "") + line
+                        tempRootLog = (tempRootLog ?: "") + line
                     }
-                    dirtyFragRunning = false
+                    tempRootRunning = false
+                    if (rc == DirtyFragRunner.RC_NOT_VULNERABLE) {
+                        dirtyFragNotVulnerable = true
+                    }
+                    // 跑完不用再看日志的情况直接收掉弹窗，别挡住页面上的常驻提示；
+                    // 真正失败（ksud 启动失败/其它错误）才留着日志给人看
+                    if (rc == DirtyFragRunner.RC_OK || rc == DirtyFragRunner.RC_NOT_VULNERABLE) {
+                        tempRootLog = null
+                    }
                     showMessage(
                         context.getString(
                             when (rc) {
@@ -446,6 +537,22 @@ fun InstallScreen(
                         )
                     )
                 }
+                return@InstallScreenActions
+            }
+            if (installMethod is InstallMethod.GhostLock) {
+                // 既没有内置 profile 也没解析过镜像：先让用户挑一个内核镜像
+                if (ghostLockNeedImage) {
+                    if (!GhostLockRunner.isExtractorAvailable()) {
+                        showMessage(context.getString(R.string.ghostlock_no_extractor))
+                        return@InstallScreenActions
+                    }
+                    ghostLockImageLauncher.launch(Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "application/*"
+                        putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/octet-stream", "application/zip"))
+                    })
+                    return@InstallScreenActions
+                }
+                runGhostLock()
                 return@InstallScreenActions
             }
             val isLkmSelected = lkmSelection != LkmSelection.KmiNone
@@ -506,30 +613,19 @@ fun InstallScreen(
         }
     )
 
-    val dfLog = dirtyFragLog
-    if (dfLog != null) {
-        AlertDialog(
-            onDismissRequest = { if (!dirtyFragRunning) dirtyFragLog = null },
-            title = { Text(stringResource(R.string.dirtyfrag_root)) },
-            text = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 320.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Text(
-                        text = dfLog.ifBlank { stringResource(R.string.dirtyfrag_running) },
-                        style = MaterialTheme.typography.bodySmall
-                    )
+    val tempRootLogText = tempRootLog
+    if (tempRootLogText != null) {
+        TempRootLogDialog(
+            title = stringResource(
+                if (installMethod is InstallMethod.GhostLock) {
+                    R.string.ghostlock_root
+                } else {
+                    R.string.dirtyfrag_root
                 }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { dirtyFragLog = null },
-                    enabled = !dirtyFragRunning
-                ) { Text(stringResource(android.R.string.ok)) }
-            }
+            ),
+            log = tempRootLogText,
+            running = tempRootRunning,
+            onDismiss = { tempRootLog = null },
         )
     }
 

@@ -9,11 +9,13 @@ on:
       - '.github/workflows/build-lkm.yml'
       - '.github/workflows/ddk-lkm.yml'
       - '.github/workflows/ksud.yml'
+      - '.github/workflows/ghostlock-extract.yml'
       - '.github/scripts/setup-rust-build.sh'
       - 'repack_apk.py'
       - 'manager/**'
       - 'kernel/**'
       - 'userspace/**'
+      - 'tools/extract_rs/**'
       - 'Cargo.lock'
       - 'Cargo.toml'
 
@@ -24,11 +26,13 @@ on:
       - '.github/workflows/build-lkm.yml'
       - '.github/workflows/ddk-lkm.yml'
       - '.github/workflows/ksud.yml'
+      - '.github/workflows/ghostlock-extract.yml'
       - '.github/scripts/setup-rust-build.sh'
       - 'repack_apk.py'
       - 'manager/**'
       - 'kernel/**'
       - 'userspace/**'
+      - 'tools/extract_rs/**'
       - 'Cargo.lock'
       - 'Cargo.toml'
 
@@ -166,11 +170,19 @@ jobs:
 
 
   # ------------------------------------------------------------
+  # GhostLock: kernel offset extractor (boot.img / payload.bin / OTA)
+  # ------------------------------------------------------------
+
+  build-ghostlock-extract:
+    uses: ./.github/workflows/ghostlock-extract.yml
+
+
+  # ------------------------------------------------------------
   # Build both normal and spoofed Manager APKs
   # ------------------------------------------------------------
 
   build-manager:
-    needs: [generate-key, build-ksud]
+    needs: [generate-key, build-ksud, build-ghostlock-extract]
 
     if: always() &&
         needs.generate-key.result == 'success' &&
@@ -350,13 +362,32 @@ jobs:
         with:
           pattern: dfroot-*-ko
           merge-multiple: true
-          path: manager/app/src/main/cpp/dfroot/ko
+          path: app/src/main/cpp/dfroot/ko
 
-      - name: Debug dfroot ko
+      - name: Show dfroot ko
+        run: ls -l app/src/main/cpp/dfroot/ko || echo "no dfroot ko, using placeholders"
+
+      # --------------------------------------------------------
+      # GhostLock extractor (parses boot.img / payload.bin into a profile)
+      # --------------------------------------------------------
+
+      - name: Download ghostlock extractor
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: ghostlock-extract-android-arm64
+          path: artifacts/ghostlock-extract
+
+      - name: Copy extractor to app jniLibs
         run: |
-          echo "pwd: $(pwd)"
-          ls -l manager/app/src/main/cpp/dfroot/ko || echo "ko dir missing"
-
+          set -e
+          mkdir -p app/src/main/jniLibs/arm64-v8a
+          EXTRACT=$(find ../artifacts/ghostlock-extract -type f -name ghostlock-extract | head -n 1)
+          if [ -n "$EXTRACT" ]; then
+            cp -f "$EXTRACT" app/src/main/jniLibs/arm64-v8a/libextract.so
+          else
+            echo "no ghostlock extractor, profile parsing will be unavailable"
+          fi
 
       # --------------------------------------------------------
       # Copy ksud into Manager
@@ -517,19 +548,8 @@ jobs:
           path: artifacts/ksud-x86_64-linux-android
 
 
-      - name: Download dfroot.ko (DirtyFrag Root)
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          pattern: dfroot-*-ko
-          merge-multiple: true
-          path: manager/app/src/main/cpp/dfroot/ko
-
-      - name: Debug dfroot ko
-        run: |
-          echo "pwd: $(pwd)"
-          ls -l manager/app/src/main/cpp/dfroot/ko || echo "ko dir missing"
-
+      # ko is already embedded into libdfroot.so during the Gradle build,
+      # nothing left to fetch here.
 
       # --------------------------------------------------------
       # Place Manager APK and ksud artifacts

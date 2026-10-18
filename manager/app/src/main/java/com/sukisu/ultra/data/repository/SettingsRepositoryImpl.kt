@@ -54,10 +54,6 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.getBoolean("module_check_update", true)
         set(value) = prefs.edit { putBoolean("module_check_update", value) }
 
-    override var alternativeIcon : Boolean
-        get() = prefs.getBoolean("use_alt_icon", false)
-        set(value) = prefs.edit { putBoolean("use_alt_icon", value)}
-
     override var themeMode: Int
         get() = prefs.getInt("color_mode", 0)
         set(value) = prefs.edit { putInt("color_mode", value) }

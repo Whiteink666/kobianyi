@@ -35,8 +35,22 @@ sealed class InstallMethod : Parcelable {
             get() = R.string.install_inactive_slot
     }
 
+    /** 临时 root（GhostLock / CVE-2026-43499），纯用户态利用，重启即失效 */
+    data class GhostLock(
+        override val summary: String? = null
+    ) : InstallMethod() {
+        @get:StringRes
+        @IgnoredOnParcel
+        override val label: Int
+            get() = R.string.ghostlock_root
+    }
+
     /** 临时 root（DirtyFrag / CVE-2026-43284），不刷写任何分区、重启即失效 */
-    data object DirtyFragRoot : InstallMethod() {
+    data class DirtyFragRoot(
+        override val summary: String? = null
+    ) : InstallMethod() {
+        @get:StringRes
+        @IgnoredOnParcel
         override val label: Int
             get() = R.string.dirtyfrag_root
     }

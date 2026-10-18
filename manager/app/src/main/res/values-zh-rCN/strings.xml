@@ -674,8 +674,6 @@
     <string name="sus_maps_description_text">从 /proc/self/[maps|smaps|smaps_rollup|map_files|mem|pagemap] 中隐藏内存映射的真实文件路径。请注意：此功能不支持隐藏匿名内存映射，也无法隐藏由注入库本身产生的内联钩子或 PLT 钩子。</string>
     <string name="sus_maps_warning">重要提示：对于具备完善注入检测机制的应用，此功能可能无法有效绕过检测。</string>
     <string name="sus_maps_debug_info">首先通过 ps -enf 查找目标应用的 PID 和 UID，然后检查 /proc/&lt;pid&gt;/maps 中的相关路径，并与 /proc/1/mountinfo 中的设备号进行比对以确保一致性。只有当设备号一致时，隐藏映射才能正常工作。</string>
-    <string name="icon_switch_title">备选图标</string>
-    <string name="icon_switch_summary">更换为 KernelSU 图标</string>
     <string name="refresh">刷新</string>
     <string name="home_kernel_full_version">内核完整版本</string>
     <string name="settings_show_fullstatus">显示完整状态</string>
@@ -692,5 +690,15 @@
     <string name="dirtyfrag_failed">DirtyFrag Root：失败，请查看日志</string>
     <string name="dirtyfrag_not_vulnerable">当前内核已修复 CVE-2026-43284，这台设备无法使用 DirtyFrag Root</string>
     <string name="dirtyfrag_ksud_failed">DirtyFrag Root：已拿到 root，但 ksud 启动失败</string>
+
+    <!-- GhostLock：基于 CVE-2026-43499 的临时 root，无需解锁 bootloader -->
+    <string name="ghostlock_root">GhostLock</string>
+    <string name="ghostlock_summary">无需解锁 bootloader 的临时 root，重启后失效</string>
+    <string name="ghostlock_running">正在运行…</string>
+    <string name="ghostlock_success">GhostLock：成功</string>
+    <string name="ghostlock_failed">GhostLock：失败，请查看日志</string>
+    <string name="ghostlock_no_profile">没有内核 %1$s 的内置配置，请选择一个 boot 镜像 / payload 来解析出配置</string>
+    <string name="ghostlock_no_extractor">当前构建缺少镜像解析组件</string>
+    <string name="ghostlock_parse_failed">GhostLock：无法从该镜像解析出 offset，请查看日志</string>
 
 </resources>

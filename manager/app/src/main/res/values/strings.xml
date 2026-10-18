@@ -689,8 +689,6 @@
     <string name="sus_maps_description_text">Hide the real file paths of memory mappings from /proc/self/[maps|smaps|smaps_rollup|map_files|mem|pagemap]. Please note: This feature does not support hiding anonymous memory mappings, nor can it hide inline hooks or PLT hooks caused by the injected library itself.</string>
     <string name="sus_maps_warning">Important Notice: For applications with well-implemented injection detection mechanisms, this feature may not effectively bypass detection.</string>
     <string name="sus_maps_debug_info">First, find the target application\'s PID and UID using ps -enf, then check the relevant paths in /proc/&lt;pid&gt;/maps and compare the device numbers with those in /proc/1/mountinfo to ensure consistency. Only when the device numbers match can the map hiding function work properly.</string>
-    <string name="icon_switch_title">Alternate icon</string>
-    <string name="icon_switch_summary">Change the launcher icon to KernelSU\'s icon</string>
     <string name="refresh">Refresh</string>
     <string name="home_kernel_full_version">Kernel full version</string>
     <string name="settings_show_fullstatus">Show FullStatus</string>
@@ -707,5 +705,15 @@
     <string name="dirtyfrag_failed">DirtyFrag Root: failed, check the log</string>
     <string name="dirtyfrag_not_vulnerable">This kernel already fixes CVE-2026-43284, DirtyFrag Root cannot be used here</string>
     <string name="dirtyfrag_ksud_failed">DirtyFrag Root: root was obtained but ksud failed to start</string>
+
+    <!-- GhostLock: temporary root via CVE-2026-43499, no bootloader unlock -->
+    <string name="ghostlock_root">GhostLock</string>
+    <string name="ghostlock_summary">Temporary root without unlocking the bootloader. Lost on reboot.</string>
+    <string name="ghostlock_running">Running…</string>
+    <string name="ghostlock_success">GhostLock: success</string>
+    <string name="ghostlock_failed">GhostLock: failed, check the log</string>
+    <string name="ghostlock_no_profile">No built-in profile for kernel %1$s, pick a boot image / payload to derive it</string>
+    <string name="ghostlock_no_extractor">The kernel image parser is missing in this build</string>
+    <string name="ghostlock_parse_failed">GhostLock: could not derive offsets from that image, check the log</string>
 
 </resources>

@@ -168,15 +168,6 @@ fun SettingPagerMaterial(
                             }
                         )
                     }
-                    add {
-                        SegmentedSwitchItem(
-                            icon = Icons.Rounded.Android,
-                            title = stringResource(id = R.string.icon_switch_title),
-                            summary = stringResource(id = R.string.icon_switch_summary),
-                            checked = uiState.alternativeIcon,
-                            onCheckedChange = actions.onSetAlternativeIcon
-                        )
-                    }
                 }
             )
 

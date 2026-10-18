@@ -205,20 +205,6 @@ fun SettingPagerMiuix(
                             },
                             onClick = actions.onOpenTheme
                         )
-                        SwitchPreference(
-                        title = stringResource(id = R.string.icon_switch_title),
-                        summary = stringResource(id = R.string.icon_switch_summary),
-                        startAction = {
-                            Icon(
-                                Icons.Rounded.Android,
-                                modifier = Modifier.padding(end = 6.dp),
-                                contentDescription = stringResource(id = R.string.icon_switch_title),
-                                tint = colorScheme.onBackground
-                            )
-                        },
-                        checked = uiState.alternativeIcon,
-                        onCheckedChange = actions.onSetAlternativeIcon
-                        )
                     }
 
                     KsuIsValid {

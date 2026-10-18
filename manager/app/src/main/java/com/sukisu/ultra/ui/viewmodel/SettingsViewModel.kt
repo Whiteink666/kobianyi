@@ -36,7 +36,6 @@ class SettingsViewModel(
         viewModelScope.launch {
             val checkUpdate = repo.checkUpdate
             val checkModuleUpdate = repo.checkModuleUpdate
-            val alternativeIcon = repo.alternativeIcon
             val themeMode = repo.themeMode
             val miuixMonet = repo.miuixMonet
             val keyColor = repo.keyColor
@@ -83,7 +82,6 @@ class SettingsViewModel(
                     appLanguage = appLanguage,
                     checkUpdate = checkUpdate,
                     checkModuleUpdate = checkModuleUpdate,
-                    alternativeIcon = alternativeIcon,
                     themeMode = themeMode,
                     miuixMonet = miuixMonet,
                     keyColor = keyColor,
@@ -168,11 +166,6 @@ class SettingsViewModel(
     fun setCheckModuleUpdate(enabled: Boolean) {
         repo.checkModuleUpdate = enabled
         _uiState.update { it.copy(checkModuleUpdate = enabled) }
-    }
-    fun setAlternativeIcon(context: Context, enabled: Boolean) {
-        repo.alternativeIcon = enabled
-        _uiState.update { it.copy(alternativeIcon = enabled) }
-        com.sukisu.ultra.ui.util.toggleLauncherIcon(context, enabled)
     }
 
     fun setThemeMode(mode: Int) {
