@@ -111,16 +111,17 @@ jobs:
           echo "no expected hash passed, module uses the built-in trust anchor"
           exit 0
         fi
-        if ! command -v strings >/dev/null 2>&1; then
-          echo "strings not available, skipping check"
+        ls -l "$KO"
+        if grep -aq -- "$HASH" "$KO"; then
+          echo "OK: module trusts certificate $HASH"
           exit 0
         fi
-        if strings "$KO" | grep -q "$HASH"; then
-          echo "OK: module trusts certificate $HASH"
-        else
-          echo "::error::module does NOT contain expected hash $HASH"
-          exit 1
-        fi
+        echo "::error::module does NOT contain expected hash $HASH"
+        echo "--- diagnostics ---"
+        strings "$KO" 2>/dev/null | grep -i -m 10 "expected\|kernelsu\|manager" || true
+        echo "--- strings count ---"
+        strings "$KO" 2>/dev/null | wc -l
+        exit 1
 
     - name: Build dfroot.ko (DirtyFrag Root)
       env:
