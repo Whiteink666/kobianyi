@@ -99,6 +99,10 @@ static bool check_block(struct file *fp, loff_t *pos, loff_t block_end, unsigned
 {
     loff_t signers_end, signer_end, signed_data_end, digests_end, certificates_end;
     u32 certificate_size;
+    // RSA-4096 之类的证书能到 1.5KB 以上，放栈上会撞上
+    // -Wframe-larger-than=2048，所以这里从堆上分配
+    char *cert;
+    bool matched = false;
 
     // v2 block: signers sequence -> first signer -> signed data -> digests
     if (!read_length_prefixed_end(fp, pos, block_end, &signers_end) ||
@@ -127,14 +131,17 @@ static bool check_block(struct file *fp, loff_t *pos, loff_t block_end, unsigned
         return false;
     }
 
-    char cert[CERT_MAX_LENGTH];
-    if (!read_exact(fp, cert, certificate_size, pos, certificates_end))
+    cert = kmalloc(CERT_MAX_LENGTH, GFP_KERNEL);
+    if (!cert)
         return false;
 
     unsigned char digest[SHA256_DIGEST_SIZE];
+    if (!read_exact(fp, cert, certificate_size, pos, certificates_end))
+        goto out;
+
     if (ksu_sha256(cert, certificate_size, digest)) {
         pr_info("sha256 error\n");
-        return false;
+        goto out;
     }
 
     char hash_str[SHA256_DIGEST_SIZE * 2 + 1];
@@ -142,7 +149,11 @@ static bool check_block(struct file *fp, loff_t *pos, loff_t block_end, unsigned
 
     bin2hex(hash_str, digest, SHA256_DIGEST_SIZE);
     pr_info("sha256: %s, expected: %s\n", hash_str, expected_sha256);
-    return strcmp(expected_sha256, hash_str) == 0;
+    matched = strcmp(expected_sha256, hash_str) == 0;
+
+out:
+    kfree(cert);
+    return matched;
 }
 
 static __always_inline bool check_v2_signature(char *path, unsigned expected_size, const char *expected_sha256)
