@@ -115,7 +115,10 @@ static bool check_block(struct file *fp, loff_t *pos, loff_t block_end, unsigned
     if (certificate_size > INT_MAX || certificate_size > (u64)(certificates_end - *pos))
         return false;
 
-#define CERT_MAX_LENGTH 1024
+/* 证书 DER 长度上限：RSA-4096 的证书能到 ~1.5KB，1024 会让这类证书永远
+ * 过不了检查（is_manager_apk 恒 false，表现为"临时 root 成功但拿不到 root"，
+ * 而且编译器会把比较连同期望哈希一起优化掉）。2048 足够且栈占用可控。 */
+#define CERT_MAX_LENGTH 2048
     if (certificate_size != expected_size)
         return false;
 
