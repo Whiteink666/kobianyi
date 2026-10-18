@@ -101,6 +101,27 @@ jobs:
         llvm-strip -d "$OUT_DIR/$OUTPUT_NAME"
         echo "Size after stripping: $(du -h "$OUT_DIR/$OUTPUT_NAME" | cut -f1)"
 
+    # 守门：模块里必须真的带着指定的 manager 证书指纹。
+    # 否则 APK 用另一把 key 签时，现象是"安装成功/临时 root 成功但拿不到 root"。
+    - name: Verify embedded manager signature
+      run: |
+        HASH="${{ inputs.expected_hash }}"
+        KO=/github/workspace/out/aarch64/${{ inputs.kmi }}_kernelsu.ko
+        if [ -z "$HASH" ]; then
+          echo "no expected hash passed, module uses the built-in trust anchor"
+          exit 0
+        fi
+        if ! command -v strings >/dev/null 2>&1; then
+          echo "strings not available, skipping check"
+          exit 0
+        fi
+        if strings "$KO" | grep -q "$HASH"; then
+          echo "OK: module trusts certificate $HASH"
+        else
+          echo "::error::module does NOT contain expected hash $HASH"
+          exit 1
+        fi
+
     - name: Build dfroot.ko (DirtyFrag Root)
       env:
         EXPECTED_SIZE: ${{ inputs.expected_size }}
