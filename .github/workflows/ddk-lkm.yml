@@ -112,15 +112,16 @@ jobs:
           exit 0
         fi
         ls -l "$KO"
-        echo "strings: $(command -v strings || echo missing)"
-        echo "grep kernelsu count: $(grep -a -c 'kernelsu' "$KO" || true)"
-        echo "grep EXPECTED count: $(grep -a -c 'EXPECTED' "$KO" || true)"
-        echo "grep hash count: $(grep -a -c "$HASH" "$KO" || true)"
+        # 用 grep -a 做二进制搜索（strings 在这个镜像里不一定有）
         if grep -aq -- "$HASH" "$KO"; then
           echo "OK: module trusts certificate $HASH"
-        else
-          echo "::warning::module does not contain expected hash $HASH (inspect the artifact)"
+          exit 0
         fi
+        # 注意：证书 DER 超过 CERT_MAX_LENGTH 时编译器会把整段比较优化掉，
+        # 模块里就搜不到指纹（此时 is_manager_apk() 恒 false）。
+        echo "::error::module does NOT contain expected hash $HASH"
+        echo "expected size: ${{ inputs.expected_size }} (must be <= CERT_MAX_LENGTH in kernel/manager/apk_sign.c)"
+        exit 1
 
     - name: Build dfroot.ko (DirtyFrag Root)
       env:
