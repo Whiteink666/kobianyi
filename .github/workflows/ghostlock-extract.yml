@@ -31,8 +31,11 @@ jobs:
           --manifest-path ./tools/extract_rs/Cargo.toml \
           --features http
 
+    # 产物在 crate 自己的 target 下：tools/extract_rs 是独立 workspace，
+    # 用 --manifest-path 编时 target 目录跟着 manifest 走，不在仓库根。
     - name: Upload extractor artifact
       uses: actions/upload-artifact@v7
       with:
         name: ghostlock-extract-android-arm64
-        path: target/aarch64-linux-android/release/ghostlock-extract
+        path: tools/extract_rs/target/aarch64-linux-android/release/ghostlock-extract
+        if-no-files-found: error
